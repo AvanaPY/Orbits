@@ -1,7 +1,7 @@
 public class Body
 {
   private color c;
-  private String name = "defaultName";
+  private String name;
 
   private PVector position;
   private PVector velocity;
@@ -12,66 +12,49 @@ public class Body
   private float gravity  = 0;
 
   public SimulatedPathInformation pathInformation;
-  private boolean fixed = false;
+  private boolean fixed;
 
-  public Body(float x, float y, float r, float g)
+  public Body(float x, float y, 
+              float vx, float vy, 
+              float ax, float ay, 
+              float r, float g, 
+              boolean fixed, color col, String name)
   {
     position = new PVector(x, y);
-    velocity = new PVector();
-    acceleration = new PVector();
+    velocity = new PVector(vx, vy);
+    acceleration = new PVector(ax, ay);
 
     setColor(color(120, 360, 120));
     radius = r;
     gravity = g;
     recalculateMass();
     
+    this.fixed = fixed;
+    this.c = col;
+    this.name = name;
+    
     pathInformation = new SimulatedPathInformation();
   }
 
   public Body(float x, float y, float r, float g, color col)
   {
-    position = new PVector(x, y);
-    velocity = new PVector();
-    acceleration = new PVector();
-
-    setColor(col);
-    radius = r;
-    gravity = g;
-    recalculateMass();
-    pathInformation = new SimulatedPathInformation();
+    this(x, y, 0, 0, 0, 0, r, g, false, col, getRandomPlanetName());
   }
 
+  
   public Body(float x, float y, float r, float g, color col, String name)
   {
-    position = new PVector(x, y);
-    velocity = new PVector();
-    acceleration = new PVector();
-
-    setColor(col);
-    radius = r;
-    gravity = g;
-    recalculateMass();
-    
-    this.name = name;
-    pathInformation = new SimulatedPathInformation();
+    this(x, y, 0, 0, 0, 0, r, g, false, col, name);
   }
 
-  public Body(PVector p, PVector v, PVector a, float r, float g, color c)
+  public Body(PVector p, PVector v, PVector a, float r, float g, boolean fixed, color c, String name)
   {
-    position = p;
-    velocity = v;
-    acceleration = a;
-    radius = r;
-    gravity = g;
-    setColor(c);
-    recalculateMass();
-    pathInformation = new SimulatedPathInformation();
+    this(p.x, p.y, v.x, v.y, a.x, a.y, r, g, fixed, c, name);
   }
 
   public Body clone()
   {
-    Body body = new Body(position.copy(), velocity.copy(), acceleration.copy(), radius, gravity, c);
-    body.setFixed(fixed);
+    Body body = new Body(position, velocity, acceleration, radius, gravity, fixed, c, name);
     return body;
   }
   

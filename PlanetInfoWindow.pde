@@ -2,19 +2,16 @@ public class PlanetInfoWindow
 {
   private float x, y;
   private float w, h;
-  private color bg, borderColor, textColor;
   private boolean active = true;
   private ArrayList<UIElement> elements = new ArrayList<UIElement>();
-  public PlanetInfoWindow(PVector position, PVector dimensions, color bg, color borderColor, color textColor)
+  public PlanetInfoWindow(PVector position, PVector dimensions)
   {
     x = position.x;
     y = position.y;
     w = dimensions.x;
     h = dimensions.y;
-    this.bg = bg;
-    this.borderColor = borderColor;
-    this.textColor = textColor;
     
+    /**********************************************MISC**********************************************/
     float _y = 0;
     elements.add(new UIEditableTextElement(0, _y, w, 20, (Body body) -> {
       return body.toString();
@@ -30,8 +27,32 @@ public class PlanetInfoWindow
       body.setFixed(!body.fixed);
     }, "Toggle",
     "Fixed: "));
-  
+    
     _y += 20;
+    elements.add(
+      new UIDisplayableColorElement(0, _y, w, 20, "Color",
+        (Body body) -> { return body.c; }));
+  
+  
+    /*********************************************VECTOR*********************************************/
+    _y += 40;
+    elements.add(
+      new UIDisplayablePVectorElement(0, _y, w, 20, "Position", 
+        (Body body) -> { return body.position; }));
+        
+    _y += 20;
+    elements.add(
+      new UIDisplayablePVectorElement(0, _y, w, 20, "Velocity", 
+        (Body body) -> { return body.velocity; }));
+        
+    _y += 20;
+    elements.add(
+      new UIDisplayablePVectorElement(0, _y, w, 20, "Acceleration", 
+        (Body body) -> { return body.acceleration; }));
+  
+  
+    /**********************************************BODY**********************************************/
+    _y += 40;
     elements.add(new UIEditableFloatElement(0, _y, w, 20, (Body body) -> {
       return body.radius;
     },
@@ -86,20 +107,22 @@ public class PlanetInfoWindow
     translate(x, y);
     
     // Draw background
-    fill(bg);
+    fill(backgroundColor);
     noStroke();
     rect(0, 0, w, h);
 
     // Draw elements
-    fill(textColor);
-    textSize(12);
     for (UIElement uie : elements)
+    {
+      fill(color(190, 200, 50));
+      textSize(12);
       uie.render();
+    }
       
     // Draw border
     stroke(borderColor);
     noFill();
-    rect(0, 0, w, h);
+    rect(0, 0, w - 1, h - 1);
       
     popMatrix();
   }

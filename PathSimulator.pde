@@ -41,21 +41,19 @@ public static class PathSimulator
             bodiesArray[j].pathInformation.willCollide = true;
         }
         
-        if (i % 2 == 0)
+        // This part is a bit questionable because it 
+        // offsets the path by the reference planed in PlanetSelector.
+        // We do this so we can draw the paths in relation to how they move 
+        // with respect to the reference planet. A bit hacky to do it here but it works
+        PVector pathPos = b.position.copy();
+        if(simulatedReferenceBody != null)
         {
-          // This part is a bit questionable because it 
-          // offsets the path by the reference planed in PlanetSelector.
-          // We do this so we can draw the paths in relation to how they move 
-          // with respect to the reference planet. A bit hacky to do it here but it works
-          PVector pathPos = b.position.copy();
-          if(simulatedReferenceBody != null)
-          {
-            pathPos = pathPos.sub(simulatedReferenceBody.position);
-            pathPos = pathPos.add(PlanetSelector.referencePlanet.position);
-          }
-          
-          bodies.get(j).pathInformation.path.add(pathPos);
+          pathPos = pathPos.sub(simulatedReferenceBody.position);
+          pathPos = pathPos.add(PlanetSelector.referencePlanet.position);
         }
+        
+        bodies.get(j).pathInformation.path.add(pathPos);
+        
       }
     }
   }

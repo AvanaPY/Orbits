@@ -14,3 +14,12 @@ public static final float PLANET_MINIMUM_RADIUS  = 3f;
 public static final float PLANET_MAXIMUM_RADIUS  = 20f;
 public static final float PLANET_MINIMUM_GRAVITY = 1f;
 public static final float PLANET_MAXIMUM_GRAVITY = 50f;
+
+// Planet data
+public static String[] PLANET_NAMES = {};
+
+// UI Data
+public final color backgroundColor = color(120, 120);
+public final color borderColor = color(360);
+public final color textColor = color(170, 360, 360);
+public final int textSize = 12;

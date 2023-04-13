@@ -19,17 +19,62 @@ public void setPlanetPositionAt(float x, float y, Body body)
   body.position.set(x, y);
 }
 
-
-public Body randomBody()
-{
-  Body b = new Body(random(-1000f, 1000f), random(-1000, 1000),
-    random(5, 10), random(5, 10),
-    color(random(360), random(270), random(250, 360)));
-  b.velocity.set(PVector.fromAngle(random(TWO_PI)).setMag(random(120, 300)));
-  return b;
-}
-
 public boolean validMousePosition(float mx, float my)
 {
   return mx >= 0 && mx < width && my >= 0 && my < height;
+}
+
+public color getRandomColor(float minHue, float maxHue, float minSat, float maxSat, float minB, float maxB)
+{
+  return color(random(minHue, maxHue), random(minSat, maxSat), random(minB, maxB));
+}
+
+public String getRandomPlanetName()
+{
+  String[] planetNames = {
+    "Pithivis",
+    "Caccuirilia",
+    "Nogrurn",
+    "Ilmapus",
+    "Rugawa",
+    "Meotania",
+    "Stroacury",
+    "Chimuvis",
+    "Murn 6C1",
+    "Cov ZCIE",
+    "Zecrutis",
+    "Gucrahines",
+    "Nothuna",
+    "Anzeshan",
+    "Vaegawa",
+    "Vuliv",
+    "Brochitov",
+    "Bichenus",
+    "Meron",
+    "Gilles XHW",
+    "Gilnaotera",
+    "Alvaturn",
+    "Gastragua",
+    "Olvagua",
+    "Tubos",
+    "Uwei",
+    "Gocoter",
+    "Craoruta",
+    "Briuq XJ9"
+  };
+  String lettersAndNumbers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  int type = floor(random(2));
+  switch(type)
+  {
+    case 0:
+      return planetNames[floor(random(planetNames.length))];
+    case 1:
+      String name = planetNames[floor(random(planetNames.length))] + " ";
+      int additionalChars = floor(random(2, 4));
+      for(int i = 0; i < additionalChars; i++)
+        name += lettersAndNumbers.charAt(floor(random(lettersAndNumbers.length())));
+      return name;
+    default:
+      return "PlaceHolderPlanetName";
+  }
 }
