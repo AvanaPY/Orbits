@@ -1,16 +1,14 @@
-public class PlanetInfoWindow
+public class SelectedPlanetInfoWindow extends UIElement
 {
-  private float x, y;
-  private float w, h;
   private boolean active = true;
   private ArrayList<UIElement> elements = new ArrayList<UIElement>();
-  public PlanetInfoWindow(PVector position, PVector dimensions)
+  private boolean grow;
+  public SelectedPlanetInfoWindow(PVector position, PVector dimensions, boolean grow)
   {
-    x = position.x;
-    y = position.y;
-    w = dimensions.x;
-    h = dimensions.y;
+    super(position.x, position.y, dimensions.x, dimensions.y);
+    this.grow = grow;
     
+    println("Created InfoWindow at", x, y, "with dimensions", w, h);
     /**********************************************MISC**********************************************/
     float _y = 0;
     elements.add(new UIEditableTextElement(0, _y, w, 20, (Body body) -> {
@@ -86,7 +84,13 @@ public class PlanetInfoWindow
       return body.mass;
     }
     , "M "));
+    
+    _y += 20;
 
+    
+    _y += 2;
+    if(grow)
+      h = max(_y, h);
   }
 
   public boolean positionInsideWindow(float px, float py)
@@ -99,7 +103,7 @@ public class PlanetInfoWindow
     return active;
   }
   
-  public void DrawPlanetInfoWindow()
+  public void render()
   {
     if (!active)
       return;
@@ -113,11 +117,7 @@ public class PlanetInfoWindow
 
     // Draw elements
     for (UIElement uie : elements)
-    {
-      fill(color(190, 200, 50));
-      textSize(12);
       uie.render();
-    }
       
     // Draw border
     stroke(borderColor);

@@ -22,21 +22,22 @@ public class UIEditableTextElement extends UIElement
     noFill();
     stroke(0, 0, 0);
     strokeWeight(1);
-    rect(x, y, maxWidth, maxHeight);
-    
+    rect(x, y, w, h);
+
     fill(textColor);
     textSize(textSize);
     if (centered)
     {
       textAlign(CENTER, CENTER);
-      text(getRenderText(selectedBody), x + maxWidth / 2, y + maxHeight / 2);
+      text(getRenderText(selectedBody), x + w / 2, y + h / 2);
     } else
     {
       textAlign(LEFT, CENTER);
-      text(getRenderText(selectedBody), x, y + maxHeight / 2);
+      text(getRenderText(selectedBody), x, y + h / 2);
     }
   }
-  public void click(float mx, float my) {
+  public boolean click(float mx, float my) {
+    return false;
   }
 }
 
@@ -92,28 +93,28 @@ public class UIEditableFloatElement extends UIElement
   {
     Body selectedBody = PlanetSelector.getCurrentlySelectedPlanet();
     noFill();
-    stroke(0, 0, 0);
     strokeWeight(1);
-    rect(x, y, maxWidth, maxHeight);
+    rect(x, y, w, h);
 
     fill(textColor);
     textSize(textSize);
     textAlign(LEFT, CENTER);
-    text(getRenderText(selectedBody), x + 5, y + maxHeight / 2);
+    text(getRenderText(selectedBody), x + 5, y + h / 2);
 
     if (btns != null)
       for (UIClickableButton btn : btns)
         btn.render();
   }
-  public void click(float mx, float my)
+  public boolean click(float mx, float my)
   {
-    if (mx < x || mx > x + maxWidth || my < y || my > y + maxHeight)
-      return;
+    if (mx < x || mx > x + w || my < y || my > y + h)
+      return false;
 
     for (UIClickableButton btn : btns)
-    {
-      btn.click(mx, my);
-    }
+      if (btn.click(mx, my))
+        return true;
+
+    return false;
   }
 }
 
@@ -154,23 +155,22 @@ public class UIEditableBooleanElement extends UIElement
     Body selectedBody = PlanetSelector.getCurrentlySelectedPlanet();
 
     noFill();
-    stroke(0, 0, 0);
     strokeWeight(1);
-    rect(x, y, maxWidth, maxHeight);
-    rect(x, y, maxWidth / 4f, maxHeight);
+    rect(x, y, w, h);
+    rect(x, y, w / 4f, h);
 
     fill(textColor);
     textSize(textSize);
-    textAlign(LEFT, CENTER); 
-    text(getRenderText(selectedBody), x + 5, y + maxHeight / 2);
-    
-    float centerCell01 = x + maxWidth / 4f + maxWidth / 8f;
+    textAlign(LEFT, CENTER);
+    text(getRenderText(selectedBody), x + 5, y + h / 2);
+
+    float centerCell01 = x + w / 4f + w / 8f;
     String booleanString = str(i.getData(selectedBody));
-    booleanString = booleanString.substring(0,1).toUpperCase() + booleanString.substring(1).toLowerCase();
+    booleanString = booleanString.substring(0, 1).toUpperCase() + booleanString.substring(1).toLowerCase();
 
     textAlign(CENTER, CENTER);
     fill(i.getData(selectedBody) ? color(120, 360, 360) : color(40, 360, 360));
-    text(booleanString, centerCell01, y + maxHeight / 2);
+    text(booleanString, centerCell01, y + h / 2);
 
     fill(textColor);
     textSize(textSize);
@@ -178,15 +178,15 @@ public class UIEditableBooleanElement extends UIElement
       for (UIClickableButton btn : btns)
         btn.render();
   }
-  public void click(float mx, float my)
+  public boolean click(float mx, float my)
   {
-    if (mx < x || mx > x + maxWidth || my < y || my > y + maxHeight)
-      return;
+    if (mx < x || mx > x + w || my < y || my > y + h)
+      return false;
 
     for (UIClickableButton btn : btns)
-    {
-      btn.click(mx, my);
-    }
+      if (btn.click(mx, my))
+        return true;
+    return false;
   }
 }
 
@@ -200,83 +200,96 @@ public class UIDisplayablePVectorElement extends UIElement
     this.text = text;
     this.dataGetter = dataGetter;
   }
-  
+
   public String getRenderText(Body selectedBody) {
     return text;
   }
-  
+
   public void render()
   {
     Body selectedPlanet = PlanetSelector.getCurrentlySelectedPlanet();
-    
+
     noFill();
-    stroke(0, 0, 0);
     strokeWeight(1);
-    rect(x, y, maxWidth / 2, maxHeight);
-    rect(x + maxWidth / 2, y, maxWidth / 4, maxHeight);
-    rect(x + maxWidth * 3 / 4, y, maxWidth / 4, maxHeight);
-    
+    rect(x, y, w / 2, h);
+    rect(x + w / 2, y, w / 4, h);
+    rect(x + w * 3 / 4, y, w / 4, h);
+
     fill(textColor);
     textSize(textSize);
     textAlign(LEFT, CENTER);
-    text(getRenderText(null), x + 5, y + maxHeight / 2);
-    
+    text(getRenderText(null), x + 5, y + h / 2);
+
     PVector displayVector = dataGetter.getData(selectedPlanet);
-    float centerCell01 = x + maxWidth / 2f + maxWidth / 8f;
-    float centerCell02 = x + maxWidth / 2f + maxWidth / 4f + maxWidth / 8f;
-    
+    float centerCell01 = x + w / 2f + w / 8f;
+    float centerCell02 = x + w / 2f + w / 4f + w / 8f;
+
     textAlign(CENTER, CENTER);
-    text(nf(displayVector.x, 1, 1), centerCell01, y + maxHeight / 2);
-    text(nf(displayVector.y, 1, 1), centerCell02, y + maxHeight / 2);
+    text(nf(displayVector.x, 1, 1), centerCell01, y + h / 2);
+    text(nf(displayVector.y, 1, 1), centerCell02, y + h / 2);
   }
-  public void click(float mx, float my) {}
+  public boolean click(float mx, float my) {
+    return false;
+  }
 }
 
 public class UIDisplayableColorElement extends UIElement
 {
-  private String text;
-  private BodyColorDataGetter dataGetter;
+  private final String text;
+  private final BodyColorDataGetter dataGetter;
+  private final float centerCell01, centerCell02, centerCell03; // 3 cells for HSB or RGB
   public UIDisplayableColorElement(float x, float y, float w, float h, String text, BodyColorDataGetter dataGetter)
   {
     super(x, y, w, h);
     this.text = text;
     this.dataGetter = dataGetter;
+    centerCell01 = x + w / 2f + w * 1 / 12f;
+    centerCell02 = x + w / 2f + w * 3 / 12f;
+    centerCell03 = x + w / 2f + w * 5 / 12f;
   }
-  
+
   public String getRenderText(Body selectedBody) {
     return text;
   }
-  
+
   public void render()
   {
     Body selectedPlanet = PlanetSelector.getCurrentlySelectedPlanet();
-    
+
     noFill();
-    stroke(0, 0, 0);
     strokeWeight(1);
-    rect(x, y, maxWidth, maxHeight);
-    line(x + maxWidth / 2, y, x + maxWidth / 2, y + maxHeight);
-    line(x + maxWidth * 4 / 6, y, x + maxWidth * 4 / 6, y + maxHeight); 
-    line(x + maxWidth * 5 / 6, y, x + maxWidth * 5 / 6, y + maxHeight); 
-    
+    rect(x, y, w, h);
+    line(x + w / 2, y, x + w / 2, y + h);
+    line(x + w * 4 / 6, y, x + w * 4 / 6, y + h);
+    line(x + w * 5 / 6, y, x + w * 5 / 6, y + h);
+
     fill(textColor);
     textSize(textSize);
     textAlign(LEFT, CENTER);
-    text(getRenderText(null), x + 5, y + maxHeight / 2);
-    
+    text(getRenderText(null), x + 5, y + h / 2);
+
     color c = dataGetter.getData(selectedPlanet);
-    int r = round(hue(c)), g = round(saturation(c)), b = round(brightness(c));
-    
-    float centerCell01 = x + maxWidth / 2f + maxWidth * 1 / 12f;
-    float centerCell02 = x + maxWidth / 2f + maxWidth * 3 / 12f;
-    float centerCell03 = x + maxWidth / 2f + maxWidth * 5 / 12f;
-    
+    int r, g, b;
+    if (COLOR_MODE == HSB)
+    {
+      r = round(hue(c));
+      g = round(saturation(c));
+      b = round(brightness(c));
+    } else if (COLOR_MODE == RGB)
+    {
+      r = round(red(c));
+      g = round(green(c));
+      b = round(blue(c));
+    }
+
     textAlign(CENTER, CENTER);
-    text(r, centerCell01, y + maxHeight / 2);
-    text(g, centerCell02, y + maxHeight / 2);
-    text(b, centerCell03, y + maxHeight / 2);
+    text(r, centerCell01, y + h / 2);
+    text(g, centerCell02, y + h / 2);
+    text(b, centerCell03, y + h / 2);
   }
-  public void click(float mx, float my) {}
+  public boolean click(float mx, float my) {
+    return false;
+  }
 }
 
 
@@ -289,26 +302,27 @@ public class UIClickableButton extends UIElement
     this.text = text;
     this.action = action;
   }
-  
+
   public String getRenderText(Body selectedBody) {
     return text;
   }
-  
+
   public void render() {
     Body selectedBody = PlanetSelector.getCurrentlySelectedPlanet();
     noFill();
     stroke(0, 0, 0);
     strokeWeight(1);
-    rect(x, y, maxWidth, maxHeight);
+    rect(x, y, w, h);
 
     textAlign(CENTER, CENTER);
-    text(getRenderText(selectedBody), x + maxWidth / 2, y + maxHeight / 2);
+    text(getRenderText(selectedBody), x + w / 2, y + h / 2);
   }
-  
-  public void click(float mx, float my) {
-    if (mx < x || mx > x + maxWidth || my < y || my > y + maxHeight)
-      return;
+
+  public boolean click(float mx, float my) {
+    if (mx < x || mx > x + w || my < y || my > y + h)
+      return false;
 
     action.action();
+    return true;
   }
 }

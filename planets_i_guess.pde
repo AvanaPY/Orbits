@@ -2,32 +2,35 @@
 ArrayList<Body> bodies = new ArrayList<Body>();
 boolean simulating = false;
 boolean simulatePaths = true;
-PlanetInfoWindow planetInfoWindow;
 PVector referencePlanetOffset = new PVector(0, 0);
-
 Body sun;
 
+SelectedPlanetInfoWindow planetInfoWindow;
+UIPlanetListWindow planetListWindow;
+
+UIElement[] globalUIElements;
 
 void setup()
 {
   size(1000, 1000);
   frameRate(60);
-  colorMode(HSB, 360);
+  colorMode(COLOR_MODE, 360);
   textAlign(CENTER, CENTER);
   textSize(14);
+  
+  planetInfoWindow = new SelectedPlanetInfoWindow(new PVector(width - 250, 0), new PVector(250, 0), true);
+  planetListWindow = new UIPlanetListWindow(0, 0, 250, 200 , true);
 
-  sun = new Body(0, 0,
-    0, 0,
-    0, 0,
-    20, 1000,
-    false, color(180, 360, 360), "Centauri A20");
+  sun = createNewPlanet(0, 0,
+                        0, 0,
+                        0, 0,
+                        20, 1000,
+                        false, color(180, 360, 360), "Centauri A20");
 
   PlanetSelector.setSelectedPlanet(sun);
   PlanetSelector.setReferencedPlanet(sun);
-  sun.setFixed(false);
-  bodies.add(sun);
-
-  planetInfoWindow = new PlanetInfoWindow(new PVector(width - 300, 0), new PVector(300, 300));
+  
+  globalUIElements = new UIElement[] { planetInfoWindow, planetListWindow };
 }
 
 void draw()
@@ -35,7 +38,20 @@ void draw()
   background(20);
 
   PVector referencePosition = getGlobalReferencePosition();
+  
+  float cellSize = 100;
+  strokeWeight(1);
+  stroke(120, 0, 45);
+  
+  pushMatrix();
+  translate(-referencePosition.x % cellSize, -referencePosition.y % cellSize);
+  for(float i = -cellSize; i <= height; i += cellSize)
+  {
+    line(i, -i, i, i + height);
+    line(-i, i, i + width, i);
+  }
 
+  popMatrix();
   /********************************************************************************************************/
   // Simulate the paths
   if (simulatePaths)
@@ -75,7 +91,6 @@ void draw()
 
   if (selectedPlanet!= null)
   {
-
     PVector p = PVector.sub(selectedPlanet.position, referencePosition);
     float r = max(selectedPlanet.radius * 1.2, 10);
     float angle = TWO_PI * (frameCount / 600f);
@@ -115,7 +130,23 @@ void draw()
 
   // - Info Window (UI)
   if (selectedPlanet!= null)
-    planetInfoWindow.DrawPlanetInfoWindow();
+    planetInfoWindow.render();
+  planetListWindow.render();
+}
+
+Body createNewPlanet(float x, float y, float vx, float vy, float ax, float ay, float r, float g, boolean fixed, color c, String name)
+{
+  Body body = new Body(x, y, vx, vy, ax, ay, r, g, fixed, c, name);
+  bodies.add(body);
+  
+  planetListWindow.addNewPlanet(body);
+  return body;
+}
+
+void deletePlanet(Body body)
+{
+  bodies.remove(body);
+  planetListWindow.removeBodyFromList(body);
 }
 
 PVector getGlobalReferencePosition()
@@ -140,13 +171,15 @@ void mousePressed()
 {
   if (!validMousePosition(mouseX, mouseY))
     return;
+    
   PVector referencePosition = getGlobalReferencePosition();
   PVector mousePosWithOffset = new PVector(mouseX, mouseY).sub(width / 2, height / 2).add(referencePosition);
 
-  if (planetInfoWindow.positionInsideWindow(mouseX, mouseY))
-  {
-    planetInfoWindow.click(mouseX, mouseY);
-  } else if (mouseButton == LEFT)
+  for(UIElement element : globalUIElements)
+    if(element.click(mouseX, mouseY))
+      return;
+      
+  if (mouseButton == LEFT)
   {
 
     boolean bSelectedPlanetOnClick = PlanetSelector.selectPlanetAt(mousePosWithOffset.x, mousePosWithOffset.y, bodies, 1.2);
@@ -161,10 +194,10 @@ void mousePressed()
     color c = getRandomColor(0, 360, 360, 360, 270, 360);
     String name = getRandomPlanetName();
 
-    Body body = new Body(x, y, vx, vy, ax, ay, r, g, false, c, name);
-    bodies.add(body);
+    Body body = createNewPlanet(x, y, vx, vy, ax, ay, r, g, false, c, name);
     PlanetSelector.setSelectedPlanet(body);
     simulating = false;
+    
   } else if (mouseButton == RIGHT)
   {
     if (PlanetSelector.selectedPlanet != null)
@@ -230,7 +263,7 @@ void keyPressed()
   {
     if (PlanetSelector.selectedPlanet != null)
     {
-      bodies.remove(PlanetSelector.selectedPlanet);
+      deletePlanet(PlanetSelector.selectedPlanet);
       PlanetSelector.setSelectedPlanet(null);
     }
   }

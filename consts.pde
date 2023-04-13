@@ -1,7 +1,7 @@
 
 // Simulation constants
-public static final float TIME_STEP_SIZE = 1 / 500f;
-public static final int STEPS_PER_FRAME = 5;
+public static final float TIME_STEP_SIZE = 1 / 200f;
+public static final int STEPS_PER_FRAME = 2;
 public static final int PATH_SIMULATOR_STEPS = 5000;
 
 // Physics constants
@@ -19,7 +19,9 @@ public static final float PLANET_MAXIMUM_GRAVITY = 50f;
 public static String[] PLANET_NAMES = {};
 
 // UI Data
+public final int COLOR_MODE = HSB;
 public final color backgroundColor = color(120, 120);
 public final color borderColor = color(360);
 public final color textColor = color(170, 360, 360);
 public final int textSize = 12;
+public final color UI_ELEMENT_COLOR = color(190, 200, 50);
