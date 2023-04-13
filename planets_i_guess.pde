@@ -116,7 +116,6 @@ void draw()
   // - Info Window (UI)
   if (selectedPlanet!= null)
     planetInfoWindow.DrawPlanetInfoWindow();
-  println(referencePlanetOffset);
 }
 
 PVector getGlobalReferencePosition()

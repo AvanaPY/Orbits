@@ -265,16 +265,16 @@ public class UIDisplayableColorElement extends UIElement
     text(getRenderText(null), x + 5, y + maxHeight / 2);
     
     color c = dataGetter.getData(selectedPlanet);
-    float r = hue(c), g = saturation(c), b = brightness(c);
+    int r = round(hue(c)), g = round(saturation(c)), b = round(brightness(c));
     
     float centerCell01 = x + maxWidth / 2f + maxWidth * 1 / 12f;
     float centerCell02 = x + maxWidth / 2f + maxWidth * 3 / 12f;
     float centerCell03 = x + maxWidth / 2f + maxWidth * 5 / 12f;
     
     textAlign(CENTER, CENTER);
-    text(nf(r, 1, 0), centerCell01, y + maxHeight / 2);
-    text(nf(g, 1, 0), centerCell02, y + maxHeight / 2);
-    text(nf(b, 1, 0), centerCell03, y + maxHeight / 2);
+    text(r, centerCell01, y + maxHeight / 2);
+    text(g, centerCell02, y + maxHeight / 2);
+    text(b, centerCell03, y + maxHeight / 2);
   }
   public void click(float mx, float my) {}
 }
