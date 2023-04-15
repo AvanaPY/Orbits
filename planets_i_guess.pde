@@ -4,11 +4,8 @@ boolean simulating = false;
 boolean simulatePaths = true;
 PVector referencePlanetOffset = new PVector(0, 0);
 Body sun;
-
-SelectedPlanetInfoWindow planetInfoWindow;
-UIPlanetListWindow planetListWindow;
-
-UIElement[] globalUIElements;
+KeybindManager kbManager;
+UI ui;
 
 void setup()
 {
@@ -17,79 +14,98 @@ void setup()
   colorMode(COLOR_MODE, 360);
   textAlign(CENTER, CENTER);
   textSize(14);
-  
-  planetInfoWindow = new SelectedPlanetInfoWindow(new PVector(width - 250, 0), new PVector(250, 0), true);
-  planetListWindow = new UIPlanetListWindow(0, 0, 250, 200 , true);
 
+  // Set up UI
+  kbManager = new KeybindManager();
+  setupKeybinds();
+  ui = new UI();
+
+  // Set up simulation
   sun = createNewPlanet(0, 0,
-                        0, 0,
-                        0, 0,
-                        20, 1000,
-                        false, color(180, 360, 360), "Centauri A20");
-
+    0, 0,
+    0, 0,
+    15, 1000,
+    true, color(180, 360, 360), "Centauri A20");
   PlanetSelector.setSelectedPlanet(sun);
   PlanetSelector.setReferencedPlanet(sun);
-  
-  globalUIElements = new UIElement[] { planetInfoWindow, planetListWindow };
 }
 
-void draw()
+void setupKeybinds()
 {
-  background(20);
+  kbManager.addKeybind("ToggleSim", 's', "Toggle Sim", "S", () -> {
+    simulating = !simulating;
+  }
+  );
 
+  kbManager.addKeybind("TogglePaths", 'p', "Toggle Paths", "P", () -> {
+    simulatePaths = !simulatePaths;
+  }
+  );
+
+  kbManager.addKeybind("ToggleUI", 'i', "Toggle UI", "I", () -> {
+    ui.toggle();
+  }
+  );
+
+  kbManager.addKeybind("ResetReference", 'r', "Reset Reference", "R",
+    () -> {
+    referencePlanetOffset.add(PlanetSelector.getCurrentlyReferencedPlanet().position);
+    PlanetSelector.setReferencedPlanet(sun);
+  }
+  );
+
+  kbManager.addKeybind("ReferenceSelected", 't', "Reference Selected", "T",
+    () -> {
+    Body s = PlanetSelector.getCurrentlySelectedPlanet();
+    if (s != null) {
+      referencePlanetOffset.set(0, 0);
+      PlanetSelector.setReferencedPlanet(s);
+    }
+  }
+  );
+
+  kbManager.addKeybind("DeletePlanet", DELETE, "Delete Planet", "DEL",
+    () -> {
+    deleteSelectedPlanet();
+  }
+  );
+
+  kbManager.addKeybind("CycleMode", TAB, "Cycle Mode", "TAB", () -> {
+    OnMouseClickModeEnumManager.cycleToNextMode();
+  }
+  );
+}
+
+void renderGrid()
+{
   PVector referencePosition = getGlobalReferencePosition();
-  
   float cellSize = 100;
   strokeWeight(1);
   stroke(120, 0, 45);
-  
+
   pushMatrix();
   translate(-referencePosition.x % cellSize, -referencePosition.y % cellSize);
-  for(float i = -cellSize; i <= height; i += cellSize)
+  for (float i = -cellSize; i <= height; i += cellSize)
   {
     line(i, -i, i, i + height);
     line(-i, i, i + width, i);
   }
 
   popMatrix();
-  /********************************************************************************************************/
-  // Simulate the paths
-  if (simulatePaths)
-    PathSimulator.simulatePaths(bodies, referencePosition);
+}
 
-  /********************************************************************************************************/
-  // Update the planets
-  if (simulating)
-  {
-    for (int i = 0; i < STEPS_PER_FRAME; i++)
-    {
-      for (Body body : bodies)
-        body.attractExceptSelf(bodies);
-      for (Body body : bodies)
-        body.updatePosition();
-    }
-  }
-
-  /********************************************************************************************************/
-  // Draw in order:
-  //  - Paths
-  //  - Bodies
-
+void renderSelectedPlanetUI()
+{
   pushMatrix();
-  translate(width / 2, height / 2);
-
-  for (Body body : bodies)
-    body.drawPath(PlanetSelector.selectedPlanet == body, PlanetSelector.referencePlanet == body, false, simulatePaths, referencePosition);
-  for (Body body : bodies)
-    body.drawPlanet(PlanetSelector.selectedPlanet == body, PlanetSelector.referencePlanet == body, false, simulatePaths, referencePosition);
-
+  translate(width / 2, height / 2); // Draw in the middle of the screen
   /********************************************************************************************************/
   // Draw Selected Planet data
   // - Marker
   Body selectedPlanet = PlanetSelector.getCurrentlySelectedPlanet();
   Body referencePlanet = PlanetSelector.getCurrentlyReferencedPlanet();
+  PVector referencePosition = getGlobalReferencePosition();
 
-  if (selectedPlanet!= null)
+  if (selectedPlanet != null)
   {
     PVector p = PVector.sub(selectedPlanet.position, referencePosition);
     float r = max(selectedPlanet.radius * 1.2, 10);
@@ -125,36 +141,76 @@ void draw()
     line(0, 0 + r, 0, 0 + r + markerLength);
     popMatrix();
   }
-  /********************************************************************************************************/
   popMatrix();
+}
 
-  // - Info Window (UI)
-  if (selectedPlanet!= null)
-    planetInfoWindow.render();
-  planetListWindow.render();
+void takeSimulationStep()
+{
+  if (simulating)
+  {
+    for (int i = 0; i < STEPS_PER_FRAME; i++)
+    {
+      for (Body body : bodies)
+        body.attractExceptSelf(bodies);
+      for (Body body : bodies)
+        body.updatePosition();
+    }
+  }
+  // Simulate the paths
+  PVector referencePosition = getGlobalReferencePosition();
+  if (simulatePaths)
+    PathSimulator.simulatePaths(bodies, referencePosition);
+}
+
+void draw()
+{
+  background(20);
+  PVector referencePosition = getGlobalReferencePosition();
+
+  takeSimulationStep();
+
+  renderGrid();
+
+  pushMatrix();
+  translate(width / 2, height / 2);
+  for (Body body : bodies)
+    body.drawPath(PlanetSelector.selectedPlanet == body, PlanetSelector.referencePlanet == body, false, simulatePaths, referencePosition);
+  for (Body body : bodies)
+    body.drawPlanet(PlanetSelector.selectedPlanet == body, PlanetSelector.referencePlanet == body, false, simulatePaths, referencePosition);
+
+  popMatrix();
+  renderSelectedPlanetUI();
+  ui.render();
 }
 
 Body createNewPlanet(float x, float y, float vx, float vy, float ax, float ay, float r, float g, boolean fixed, color c, String name)
 {
   Body body = new Body(x, y, vx, vy, ax, ay, r, g, fixed, c, name);
   bodies.add(body);
-  
-  planetListWindow.addNewPlanet(body);
+
+  ui.planetListWindow.addNewPlanet(body);
   return body;
 }
 
-void deletePlanet(Body body)
+boolean deleteSelectedPlanet()
 {
-  bodies.remove(body);
-  planetListWindow.removeBodyFromList(body);
+  Body body = PlanetSelector.getCurrentlySelectedPlanet();
+  if (body != null)
+  {
+    bodies.remove(body);
+    ui.planetListWindow.removeBodyFromList(body);
+    PlanetSelector.setSelectedPlanet(null);
+    return true;
+  }
+  return false;
 }
 
 PVector getGlobalReferencePosition()
 {
-  if (PlanetSelector.referencePlanet == null)
+  Body body = PlanetSelector.getCurrentlyReferencedPlanet();
+  if (body == null)
     return referencePlanetOffset;
-  return PVector.add(PlanetSelector.referencePlanet.position, referencePlanetOffset);
-  //return PlanetSelector.referencePlanet == null ? referencePlanetOffset : PlanetSelector.referencePlanet.position;
+  return PVector.add(body.position, referencePlanetOffset);
 }
 
 void moveGlobalCameraOffset(float offsetX, float offsetY)
@@ -169,74 +225,44 @@ void setGlobalCameraOffset(float x, float y)
 
 void mousePressed()
 {
-  if (!validMousePosition(mouseX, mouseY))
+  if (!validMousePosition(mouseX, mouseY) || ui.click(mouseX, mouseY))
     return;
-    
+
   PVector referencePosition = getGlobalReferencePosition();
   PVector mousePosWithOffset = new PVector(mouseX, mouseY).sub(width / 2, height / 2).add(referencePosition);
 
-  for(UIElement element : globalUIElements)
-    if(element.click(mouseX, mouseY))
-      return;
-      
   if (mouseButton == LEFT)
   {
-
-    boolean bSelectedPlanetOnClick = PlanetSelector.selectPlanetAt(mousePosWithOffset.x, mousePosWithOffset.y, bodies, 1.2);
-    if (bSelectedPlanetOnClick)
-      return;
-
-    float x = mousePosWithOffset.x, y = mousePosWithOffset.y;
-    float vx = 0, vy = 0;
-    float ax = 0, ay = 0;
-    float r = 5f;
-    float g = 10f;
-    color c = getRandomColor(0, 360, 360, 360, 270, 360);
-    String name = getRandomPlanetName();
-
-    Body body = createNewPlanet(x, y, vx, vy, ax, ay, r, g, false, c, name);
-    PlanetSelector.setSelectedPlanet(body);
-    simulating = false;
-    
+    switch(OnMouseClickModeEnumManager.getMode())
+    {
+    case PLANET_CREATE_SELECT:
+      createOrSelectPlanetAtPosition(mousePosWithOffset);
+      simulating = false;
+      break;
+    case PLANET_SET_REFERENCED:
+      referencePlanetAtMousePosition(mousePosWithOffset);
+      break;
+    case NONE:
+    default:
+      break;
+    }
   } else if (mouseButton == RIGHT)
-  {
-    if (PlanetSelector.selectedPlanet != null)
-    {
-      setPlanetVelocityTowardsPosition(mousePosWithOffset.x, mousePosWithOffset.y, PlanetSelector.selectedPlanet);
-    }
-  } else {
-    Body previousReference = PlanetSelector.referencePlanet;
-    PlanetSelector.setReferencePlanetAt(mousePosWithOffset.x, mousePosWithOffset.y, bodies, 1.2);
-    if (PlanetSelector.referencePlanet == null && previousReference != null)
-    {
-      PlanetSelector.setReferencedPlanet(previousReference);
-    } else
-    {
-      setGlobalCameraOffset(0, 0);
-
-      //setGlobalCameraOffset(previousReference.position.x, previousReference.position.y);
-    }
+      setSelectedPlanetVelocityTowardsMousePosition(mousePosWithOffset);
+else {
   }
 }
 
 void mouseDragged()
 {
-  if (!validMousePosition(mouseX, mouseY))
+  if (!validMousePosition(mouseX, mouseY) || ui.mouseDragged(mouseX, mouseY))
     return;
+
   PVector referencePosition = getGlobalReferencePosition();
   PVector mousePosWithOffset = new PVector(mouseX, mouseY).sub(width / 2, height / 2).add(referencePosition);
 
-  // If our mouse is inside the window and it is active, return
-  if (planetInfoWindow.positionInsideWindow(mouseX, mouseY) && planetInfoWindow.active())
-    return;
-
   if (mouseButton == RIGHT)
-  {
-    if (PlanetSelector.selectedPlanet != null)
-    {
-      setPlanetVelocityTowardsPosition(mousePosWithOffset.x, mousePosWithOffset.y, PlanetSelector.selectedPlanet);
-    }
-  } else if (mouseButton == LEFT)
+    setSelectedPlanetVelocityTowardsMousePosition(mousePosWithOffset);
+  else if (mouseButton == LEFT)
   {
     if (PlanetSelector.selectedPlanet != null)
     {
@@ -250,21 +276,5 @@ void mouseDragged()
 
 void keyPressed()
 {
-  if (key == 's')
-  {
-    simulating = !simulating;
-  } else if (key == 'p')
-  {
-    simulatePaths = !simulatePaths;
-  } else if (key == 'i')
-  {
-    planetInfoWindow.toggle();
-  } else if (key == DELETE)
-  {
-    if (PlanetSelector.selectedPlanet != null)
-    {
-      deletePlanet(PlanetSelector.selectedPlanet);
-      PlanetSelector.setSelectedPlanet(null);
-    }
-  }
+  kbManager.activateKeybind(key);
 }

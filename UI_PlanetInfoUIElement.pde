@@ -15,7 +15,7 @@ public class UIEditableTextElement extends UIElement
     return text + i.getData(selectedBody);
   }
 
-  public void render()
+  public void renderUI()
   {
     Body selectedBody = PlanetSelector.getCurrentlySelectedPlanet();
 
@@ -36,7 +36,7 @@ public class UIEditableTextElement extends UIElement
       text(getRenderText(selectedBody), x, y + h / 2);
     }
   }
-  public boolean click(float mx, float my) {
+  public boolean onClick(float mx, float my) {
     return false;
   }
 }
@@ -89,7 +89,7 @@ public class UIEditableFloatElement extends UIElement
     return text + nf(i.getData(selectedBody), 1, 2);
   }
 
-  public void render()
+  public void renderUI()
   {
     Body selectedBody = PlanetSelector.getCurrentlySelectedPlanet();
     noFill();
@@ -105,15 +105,13 @@ public class UIEditableFloatElement extends UIElement
       for (UIClickableButton btn : btns)
         btn.render();
   }
-  public boolean click(float mx, float my)
+  public boolean onClick(float mx, float my)
   {
-    if (mx < x || mx > x + w || my < y || my > y + h)
-      return false;
-
-    for (UIClickableButton btn : btns)
-      if (btn.click(mx, my))
-        return true;
-
+    if(positionInElement(mx, my))
+      for (UIClickableButton btn : btns)
+        if (btn.onClick(mx, my))
+          return true;
+          
     return false;
   }
 }
@@ -150,7 +148,7 @@ public class UIEditableBooleanElement extends UIElement
     return text;
   }
 
-  public void render()
+  public void renderUI()
   {
     Body selectedBody = PlanetSelector.getCurrentlySelectedPlanet();
 
@@ -178,13 +176,13 @@ public class UIEditableBooleanElement extends UIElement
       for (UIClickableButton btn : btns)
         btn.render();
   }
-  public boolean click(float mx, float my)
+  public boolean onClick(float mx, float my)
   {
     if (mx < x || mx > x + w || my < y || my > y + h)
       return false;
 
     for (UIClickableButton btn : btns)
-      if (btn.click(mx, my))
+      if (btn.onClick(mx, my))
         return true;
     return false;
   }
@@ -205,7 +203,7 @@ public class UIDisplayablePVectorElement extends UIElement
     return text;
   }
 
-  public void render()
+  public void renderUI()
   {
     Body selectedPlanet = PlanetSelector.getCurrentlySelectedPlanet();
 
@@ -228,7 +226,7 @@ public class UIDisplayablePVectorElement extends UIElement
     text(nf(displayVector.x, 1, 1), centerCell01, y + h / 2);
     text(nf(displayVector.y, 1, 1), centerCell02, y + h / 2);
   }
-  public boolean click(float mx, float my) {
+  public boolean onClick(float mx, float my) {
     return false;
   }
 }
@@ -252,7 +250,7 @@ public class UIDisplayableColorElement extends UIElement
     return text;
   }
 
-  public void render()
+  public void renderUI()
   {
     Body selectedPlanet = PlanetSelector.getCurrentlySelectedPlanet();
 
@@ -287,7 +285,7 @@ public class UIDisplayableColorElement extends UIElement
     text(g, centerCell02, y + h / 2);
     text(b, centerCell03, y + h / 2);
   }
-  public boolean click(float mx, float my) {
+  public boolean onClick(float mx, float my) {
     return false;
   }
 }
@@ -307,7 +305,7 @@ public class UIClickableButton extends UIElement
     return text;
   }
 
-  public void render() {
+  public void renderUI() {
     Body selectedBody = PlanetSelector.getCurrentlySelectedPlanet();
     noFill();
     stroke(0, 0, 0);
@@ -318,7 +316,7 @@ public class UIClickableButton extends UIElement
     text(getRenderText(selectedBody), x + w / 2, y + h / 2);
   }
 
-  public boolean click(float mx, float my) {
+  public boolean onClick(float mx, float my) {
     if (mx < x || mx > x + w || my < y || my > y + h)
       return false;
 

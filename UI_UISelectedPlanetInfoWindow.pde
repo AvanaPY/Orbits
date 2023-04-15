@@ -1,6 +1,5 @@
 public class SelectedPlanetInfoWindow extends UIElement
 {
-  private boolean active = true;
   private ArrayList<UIElement> elements = new ArrayList<UIElement>();
   private boolean grow;
   public SelectedPlanetInfoWindow(PVector position, PVector dimensions, boolean grow)
@@ -46,7 +45,7 @@ public class SelectedPlanetInfoWindow extends UIElement
     _y += 20;
     elements.add(
       new UIDisplayablePVectorElement(0, _y, w, 20, "Acceleration", 
-        (Body body) -> { return body.acceleration; }));
+        (Body body) -> { return body.prevAcceleration; }));
   
   
     /**********************************************BODY**********************************************/
@@ -92,18 +91,8 @@ public class SelectedPlanetInfoWindow extends UIElement
     if(grow)
       h = max(_y, h);
   }
-
-  public boolean positionInsideWindow(float px, float py)
-  {
-    return px >= x && px <= x + w && py >= y && py <= y + h;
-  }
   
-  public boolean active()
-  {
-    return active;
-  }
-  
-  public void render()
+  public void renderUI()
   {
     if (!active)
       return;
@@ -127,12 +116,7 @@ public class SelectedPlanetInfoWindow extends UIElement
     popMatrix();
   }
 
-  public void toggle()
-  {
-    active = !active;
-  }
-
-  public boolean click(float mx, float my)
+  public boolean onClick(float mx, float my)
   {
     if(!active)
       return false;

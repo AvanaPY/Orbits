@@ -2,14 +2,16 @@ public class UIPlanetListWindow extends UIElement
 {
   private ArrayList<UIPlanetListEntryElement> elements;
   private boolean grow;
-  
+
   private float entryHeight = 20;
+  private float startingHeight;
 
   public UIPlanetListWindow(float x, float y, float w, float h, boolean grow)
   {
     super(x, y, w, h);
     this.grow = grow;
     this.elements = new ArrayList<UIPlanetListEntryElement>();
+    startingHeight = h;
   }
 
   public void addNewPlanet(Body body)
@@ -17,53 +19,66 @@ public class UIPlanetListWindow extends UIElement
     float y = entryHeight * elements.size();
     UIPlanetListEntryElement entry = new UIPlanetListEntryElement(x, y, w, 20, body);
     elements.add(entry);
+
+    updateElementPositions();
+    updateHeightIfGrow();
   }
 
   public void removeBodyFromList(Body body)
   {
-    for(int i = 0; i < elements.size(); i++)
+    for (int i = 0; i < elements.size(); i++)
     {
       UIPlanetListEntryElement element = elements.get(i);
-      if(body == element.body)
+      if (body == element.body)
       {
         elements.remove(i);
         break;
       }
     }
     updateElementPositions();
+    updateHeightIfGrow();
   }
-  
+
   private void updateElementPositions()
   {
-    for(int i = 0; i < elements.size(); i++)
-    {
+    for (int i = 0; i < elements.size(); i++) {
       elements.get(i).y = i * entryHeight;
     }
   }
+  private void updateHeightIfGrow()
+  {
+    if (!grow)
+      return;
+    float currentEvaluatedHeight = entryHeight * elements.size();
+    float minHeight = startingHeight;
+    h = max(minHeight, currentEvaluatedHeight);
+  }
 
-  public void render()
+  public void renderUI()
   {
     noStroke();
     fill(backgroundColor);
     rect(x, y, w, h);
 
     for (UIElement uie : elements)
+    {
+      if(!grow && uie.y + uie.h > y + h)
+        continue;
       uie.render();
-
-    stroke(0, 0, 360);
+    }
     strokeWeight(2);
     noFill();
+    stroke(0, 0, 360);
     rect(x, y, w, h);
   }
 
-  public boolean click(float mx, float my)
+  public boolean onClick(float mx, float my)
   {
-    if(mx < x || mx > x + w || my < y || my > y + h)
+    if (!positionInElement(mx, my))
       return false;
-    for(UIElement uie : elements)
-      if(uie.click(mx, my))
-        return true;
-    return false;
+    for (UIElement uie : elements)
+      uie.click(mx, my);
+    return true;
   }
 }
 
@@ -81,23 +96,36 @@ class UIPlanetListEntryElement extends UIElement
     return body.name;
   }
 
-  public void render()
+  public void renderUI()
   {
-    strokeWeight(1);
-    noFill();
-    stroke(0, 0, 0);
-    rect(x, y, w, h);
+    Body globalSelectedPlanet = PlanetSelector.getCurrentlySelectedPlanet();
 
     String planetName = body.name;
     color col = body.c;
     float cellCenter01 = x + w / 2;
+
+    if (globalSelectedPlanet != null && globalSelectedPlanet == body)
+    {
+      float h = hue(backgroundColor);
+      float s = saturation(backgroundColor);
+      float b = brightness(backgroundColor);
+      fill(h, s, b);
+    } else
+      noFill();
+    strokeWeight(1);
+    stroke(0, 0, 0);
+    rect(x, y, w, h);
+
     fill(col);
     noStroke();
     textAlign(CENTER, CENTER);
     text(planetName, cellCenter01, y + h / 2);
   }
 
-  public boolean click(float mx, float my) {
-    return false;
+  public boolean onClick(float mx, float my) {
+    if (!positionInElement(mx, my))
+      return false;
+    PlanetSelector.setSelectedPlanet(body);
+    return true;
   }
 }

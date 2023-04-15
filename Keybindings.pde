@@ -1,0 +1,83 @@
+public static class Keybind
+{
+  private String name;
+  private char keybind;
+  
+  private String displayName;
+  private String displayKeybind;
+  private InteractiveAction action;
+  public Keybind(String n, char k, String dName, String dKeybind, InteractiveAction action){
+    name = n;
+    keybind = k;
+    displayName = dName;
+    displayKeybind = dKeybind;
+    this.action = action;
+  }
+  
+  public Keybind(String n, char k, String dName, InteractiveAction action)
+  {
+    this(n, k, dName, str(k).toUpperCase(), action);
+  }
+  
+  public Keybind(String n, char k, InteractiveAction action)
+  {
+    this(n, k, n, str(k).toUpperCase(), action);
+  }
+  
+  public void action()
+  {
+    action.action();
+  }
+}
+public static class KeybindManager
+{
+  public static KeybindManager instance;
+  public ArrayList<Keybind> keybinds;
+  private HashMap<String, Character> keybindNameMap;
+  private HashMap<Character, Keybind> keybindMap;
+  public KeybindManager()
+  {
+    KeybindManager.instance = this;
+    keybinds = new ArrayList<Keybind>();
+    keybindNameMap = new HashMap<String, Character>();
+    keybindMap = new HashMap<Character, Keybind>();
+  }
+  
+  public Keybind getKeybind(char c)
+  {
+    return keybindMap.get(c);
+  }
+  
+  public void addKeybind(String keybindName, char keybindChar, String displayName, String displayKeybind, InteractiveAction action){
+    if(getKeybind(keybindChar) != null)
+      return;
+      
+    Keybind keybind = new Keybind(keybindName, keybindChar, displayName, displayKeybind, action);
+    
+    keybinds.add(keybind);
+    keybindNameMap.put(keybind.name, keybind.keybind);
+    keybindMap.put(keybindChar, keybind);
+  }
+
+  public boolean isKey(Character k, String name)
+  {
+    Character boundedKey = keybindNameMap.get(name);
+    return boundedKey == k;
+  }
+  
+  public boolean activateKeybind(char c)
+  {
+    Keybind k = getKeybind(c);
+    if(k != null)
+    {
+      k.action();
+      return true;
+    }
+    return false;
+  }
+}
+
+public static KeybindManager getGlobalKeybindManager()
+{
+  return KeybindManager.instance; 
+}
