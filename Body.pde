@@ -74,6 +74,12 @@ public class Body
     c = _c;
   }
 
+  public void setVelocity(PVector x)
+  {
+    if (!fixed)
+      velocity.set(x);
+  }
+
   public void setRadius(float r) {
     radius = max(min(r, PLANET_MAXIMUM_RADIUS), PLANET_MINIMUM_RADIUS);
     recalculateMass();
@@ -84,9 +90,19 @@ public class Body
     recalculateMass();
   }
 
+  public PVector calculateMomentum()
+  {
+    return PVector.mult(velocity, mass);
+  }
+
   private void recalculateMass()
   {
     mass = CalculateMass(gravity, radius);
+  }
+  
+  public void forceMovePosition(PVector offset)
+  {
+    position.add(offset);
   }
 
   public void resetAcceleration()
@@ -94,9 +110,18 @@ public class Body
     acceleration.set(0, 0);
   }
 
+  public void applyForce(PVector force)
+  {
+    acceleration.add(PVector.div(force, mass));
+  }
+  
+  public void applyAcceleration(PVector acc)
+  {
+    acceleration.add(acc);
+  }
+
   public void attractExceptSelf(Iterable<Body> bodies)
   {
-    resetAcceleration();
     for (Body body : bodies)
     {
       if (body == this)
@@ -117,6 +142,7 @@ public class Body
     velocity.add(acceleration);
     position.add(PVector.mult(velocity, TIME_STEP_SIZE));
     prevAcceleration.set(acceleration);
+    acceleration.set(0, 0);
   }
 
   public void drawPath(boolean isSelected, boolean isReference, boolean drawMass, boolean drawPath, PVector referencePosition)
@@ -153,7 +179,6 @@ public class Body
     // but we still translate to the reference position
     pushMatrix();
     translate(position.x-referencePosition.x, position.y-referencePosition.y);
-
     noStroke();
     fill(c);
     circle(0, 0, 2 * radius);

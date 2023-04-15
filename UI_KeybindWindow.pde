@@ -26,9 +26,10 @@ public class UIKeybindWindow extends UIElement
     for(UIElement e : elements)
       e.renderUI();
     
+    strokeWeight(1);
     stroke(0, 0, 360);
     noFill();
-    rect(x, y, w, h);
+    rect(x, y, w, h-1);
   }
   
   public boolean onClick(float x, float y) { 

@@ -1,6 +1,6 @@
 
 ArrayList<Body> bodies = new ArrayList<Body>();
-boolean simulating = false;
+boolean simulating = true;
 boolean simulatePaths = true;
 PVector referencePlanetOffset = new PVector(0, 0);
 Body sun;
@@ -10,7 +10,7 @@ UI ui;
 void setup()
 {
   size(1000, 1000);
-  frameRate(60);
+  frameRate(DESIRED_FRAMERATE + 10);
   colorMode(COLOR_MODE, 360);
   textAlign(CENTER, CENTER);
   textSize(14);
@@ -28,6 +28,8 @@ void setup()
     true, color(180, 360, 360), "Centauri A20");
   PlanetSelector.setSelectedPlanet(sun);
   PlanetSelector.setReferencedPlanet(sun);
+
+  createRandomInitialPlanets(3);
 }
 
 void setupKeybinds()
@@ -72,6 +74,39 @@ void setupKeybinds()
 
   kbManager.addKeybind("CycleMode", TAB, "Cycle Mode", "TAB", () -> {
     OnMouseClickModeEnumManager.cycleToNextMode();
+  }
+  );
+
+  float planetVelocityChangeStep = 0.1;
+  kbManager.addCodedKeybind("LeftVelocity", LEFT, "Move Velocity Left", "LEFT", () -> {
+    Body b = PlanetSelector.getCurrentlySelectedPlanet();
+    if(b == null)  
+      return;
+    b.velocity.add(-planetVelocityChangeStep, 0);
+  }
+  );
+
+  kbManager.addCodedKeybind("RightVelocity", RIGHT, "Move Velocity Right", "RIGHT", () -> {
+    Body b = PlanetSelector.getCurrentlySelectedPlanet();
+    if(b == null)  
+      return;
+    b.velocity.add(planetVelocityChangeStep, 0);
+  }
+  );
+
+  kbManager.addCodedKeybind("UPVelocity", UP, "Move Velocity UP", "UP", () -> {
+    Body b = PlanetSelector.getCurrentlySelectedPlanet();
+    if(b == null)  
+      return;
+    b.velocity.add(0, -planetVelocityChangeStep);
+  }
+  );
+
+  kbManager.addCodedKeybind("DownVelocity", DOWN, "Move Velocity Down", "DOWN", () -> {
+    Body b = PlanetSelector.getCurrentlySelectedPlanet();
+    if(b == null)  
+      return;
+    b.velocity.add(0, planetVelocityChangeStep);
   }
   );
 }
@@ -150,10 +185,69 @@ void takeSimulationStep()
   {
     for (int i = 0; i < STEPS_PER_FRAME; i++)
     {
-      for (Body body : bodies)
-        body.attractExceptSelf(bodies);
-      for (Body body : bodies)
-        body.updatePosition();
+      calculateAttractions(bodies);
+      for (Body b : bodies)
+        b.updatePosition();
+      resolveCollisions(bodies);
+    }
+  }
+}
+
+static void calculateAttractions(ArrayList<Body> bodies)
+{
+  for (int i = 0; i < bodies.size() - 1; i++)
+  {
+    for (int j = i + 1; j < bodies.size(); j++)
+    {
+      Body a = bodies.get(i);
+      Body b = bodies.get(j);
+      a.applyAcceleration(gravitationalAcceleration(a, b));
+      b.applyAcceleration(gravitationalAcceleration(b, a));
+    }
+  }
+}
+
+void resolveCollisions(ArrayList<Body> bodies)
+{
+  for (int i = 0; i < bodies.size(); i++)
+  {
+    for (int j = i + 1; j < bodies.size(); j++)
+    {
+      Body a = bodies.get(i);
+      Body b = bodies.get(j);
+      float sumR = a.radius + b.radius;
+      PVector dir = PVector.sub(b.position, a.position);
+      float dist = dir.mag();
+      if (sumR < dist)
+        continue;
+
+      float totalMomentum = PVector.add(a.calculateMomentum(), b.calculateMomentum()).mag();
+      // Calculate new velocities
+      PVector v1 = PVector.add(
+        PVector.mult(a.velocity, (a.mass - b.mass) / (a.mass + b.mass)),
+        PVector.mult(b.velocity, (2 * b.mass) / (a.mass + b.mass))
+        );
+      PVector v2 = PVector.add(
+        PVector.mult(a.velocity, (2*a.mass) / (a.mass + b.mass)),
+        PVector.mult(b.velocity, (b.mass - a.mass) / (a.mass + b.mass))
+        );
+
+      a.setVelocity(v1);
+      b.setVelocity(v2);
+
+      // Set new positions by offseting each by half of the distance in the relative direction
+      float offsetTotal = dist - sumR;
+
+      float offsetA = offsetTotal * (1 - a.mass / (a.mass + b.mass));
+      float offsetB = offsetTotal * (1 - b.mass / (a.mass + b.mass));
+
+      a.forceMovePosition(PVector.mult(dir, 1).setMag(offsetA));
+      b.forceMovePosition(PVector.mult(dir, -1).setMag(offsetB));
+
+      float totalMomentum2 = PVector.add(a.calculateMomentum(), b.calculateMomentum()).mag();
+      println(a.name, "HAS COLLIDED WITH", b.name);
+      println("\tMomentum1:", totalMomentum);
+      println("\tMomentum2:", totalMomentum2, "(" + (totalMomentum == totalMomentum2) + ")");
     }
   }
 }
@@ -165,9 +259,9 @@ void draw()
 
   // calculate the paths prior to moving, this helps stabilise them visually as they are only a visual idea anyways
   if (simulatePaths)
-    PathSimulator.simulatePaths(bodies, referencePosition);
-  takeSimulationStep();
+    PathSimulator.simulatePaths(bodies, referencePosition, frameRate);
 
+  takeSimulationStep();
   renderGrid();
 
   pushMatrix();
@@ -235,8 +329,13 @@ void mousePressed()
     switch(OnMouseClickModeEnumManager.getMode())
     {
     case PLANET_CREATE_SELECT:
-      createOrSelectPlanetAtPosition(mousePosWithOffset);
-      simulating = false;
+      // createOrSelectPlanetAtPosition returns null if it selected a planet, and a 'Body' if it created one
+      Body b = createOrSelectPlanetAtPosition(mousePosWithOffset);
+      if (b != null)
+      {
+        setBodyInOrbitAroundGreatestAttractor(b, bodies);
+        simulating = false;
+      }
       break;
     case PLANET_SET_REFERENCED:
       referencePlanetAtMousePosition(mousePosWithOffset);
@@ -246,8 +345,8 @@ void mousePressed()
       break;
     }
   } else if (mouseButton == RIGHT)
-      setSelectedPlanetVelocityTowardsMousePosition(mousePosWithOffset);
-else {
+    setSelectedPlanetVelocityTowardsMousePosition(mousePosWithOffset);
+  else {
   }
 }
 
@@ -275,5 +374,11 @@ void mouseDragged()
 
 void keyPressed()
 {
-  kbManager.activateKeybind(key);
+  if (key == CODED)
+  {
+    kbManager.activateCodedKeybind(keyCode);
+  } else
+  {
+    kbManager.activateKeybind(key);
+  }
 }

@@ -3,9 +3,16 @@ public float CalculateMass(float gravity, float radius)
   return gravity * radius * radius / G * M; // M is a mass constant found in 'consts', it helps with scaling the mass of planets so you don't have to make massive vectors to make orbits close to the sun
 }
 
-public float gravitationalForce(Body a, Body b)
+public static float gravitationalForce(Body a, Body b)
 {
   return G * a.mass * b.mass / PVector.sub(a.position, b.position).magSq();
+}
+
+static PVector gravitationalAcceleration(Body a, Body b)
+{
+  PVector d = PVector.sub(b.position, a.position);
+  d.setMag(G * b.mass / d.magSq());
+  return d;
 }
 
 public void setPlanetPositionAt(float x, float y, Body body)
@@ -23,36 +30,6 @@ public boolean validMousePosition(float mx, float my)
 public color getRandomColor(float minHue, float maxHue, float minSat, float maxSat, float minB, float maxB)
 {
   return color(random(minHue, maxHue), random(minSat, maxSat), random(minB, maxB));
-}
-
-public void setBodyVelocityOrthogonalToGreatestForce(Body body, ArrayList<Body> bodies)
-{
-  Body greatestAttractor = null;
-  float value = Float.MIN_VALUE;
-  for (Body b : bodies)
-  {
-    if (b == body)
-      continue;
-    float dist = PVector.sub(body.position, b.position).magSq();
-    float f = gravitationalForce(body, b) / dist;
-    if (f > value)
-    {
-      value = f;
-      greatestAttractor = b;
-    }
-  }
-  if (greatestAttractor == null)
-    return;
-
-  PVector direction = PVector.sub(greatestAttractor.position, body.position);
-  float distance = direction.mag();
-  float orbitalVelocity = sqrt(G * greatestAttractor.mass / (distance * TIME_STEP_SIZE)); // Scale by time step so the simulation steps are the right size
-  float rotation = HALF_PI * random(0.5, 1);
-  float rotationFactor = random(1) < 0.5 ? -1 : 1;
-
-  direction.setMag(orbitalVelocity);
-  direction.rotate(rotation * rotationFactor);
-  body.velocity.set(direction);
 }
 
 public String getRandomPlanetName()
@@ -105,10 +82,15 @@ public String getRandomPlanetName()
   }
 }
 
-
-public void selectPlanetAtMousePosition(PVector mousePosWithOffset)
+void createRandomInitialPlanets(int n)
 {
-  boolean bSelectedPlanetOnClick = PlanetSelector.selectPlanetAt(mousePosWithOffset.x, mousePosWithOffset.y, bodies, 1.2);
+  for(int i = 0; i < n; i++)
+  {
+    float x = random(50, 400) * (random(1) < 0.5 ? -1 : 1);
+    float y = random(50, 400) * (random(1) < 0.5 ? -1 : 1);
+    Body b = createNewRandomPlanetAtPosition(new PVector(x, y));
+    setBodyInOrbitAroundGreatestAttractor(b, bodies);
+  }
 }
 
 public void referencePlanetAtMousePosition(PVector mousePosWithOffset)
@@ -121,31 +103,60 @@ public void referencePlanetAtMousePosition(PVector mousePosWithOffset)
   } else
   {
     setGlobalCameraOffset(0, 0);
-
-    //setGlobalCameraOffset(previousReference.position.x, previousReference.position.y);
   }
 }
 
-public void createOrSelectPlanetAtPosition(PVector mousePosWithOffset)
+public Body createOrSelectPlanetAtPosition(PVector mousePosWithOffset)
 {
   if(PlanetSelector.selectPlanetAt(mousePosWithOffset.x, mousePosWithOffset.y, bodies, 1.2))
-    return;
-  createNewPlanetAtMousePosition(mousePosWithOffset);
+    return null;
+  Body b = createNewRandomPlanetAtPosition(mousePosWithOffset);
+  PlanetSelector.setSelectedPlanet(b);
+  return b;
 }
 
-public void createNewPlanetAtMousePosition(PVector mousePosWithOffset)
+public Body createNewRandomPlanetAtPosition(PVector globalPosition)
 {
-  float x = mousePosWithOffset.x, y = mousePosWithOffset.y;
+  float x = globalPosition.x, y = globalPosition.y;
   float vx = 0, vy = 0;
   float ax = 0, ay = 0;
-  float r = 5f;
-  float g = 10f;
-  color c = getRandomColor(0, 360, 360, 360, 270, 360);
+  float r = random(PLANET_MINIMUM_RADIUS, PLANET_MAXIMUM_RADIUS);
+  float g = random(PLANET_MINIMUM_GRAVITY, PLANET_MAXIMUM_GRAVITY);
+  color c = getRandomColor(0, 360, 250, 360, 270, 360);
   String name = getRandomPlanetName();
 
   Body body = createNewPlanet(x, y, vx, vy, ax, ay, r, g, false, c, name);
-  setBodyVelocityOrthogonalToGreatestForce(body, bodies);
-  PlanetSelector.setSelectedPlanet(body);
+  return body;
+}
+
+public void setBodyInOrbitAroundGreatestAttractor(Body body, ArrayList<Body> bodies)
+{
+  Body greatestAttractor = null;
+  float value = Float.MIN_VALUE;
+  for (Body b : bodies)
+  {
+    if (b == body)
+      continue;
+    float dist = PVector.sub(body.position, b.position).magSq();
+    float f = gravitationalForce(body, b) / dist;
+    if (f > value)
+    {
+      value = f;
+      greatestAttractor = b;
+    }
+  }
+  if (greatestAttractor == null)
+    return;
+
+  PVector direction = PVector.sub(greatestAttractor.position, body.position);
+  float distance = direction.mag();
+  float orbitalVelocity = sqrt(G * greatestAttractor.mass / (distance * TIME_STEP_SIZE)); // Scale by time step so the simulation steps are the right size
+  float rotation = HALF_PI * random(0.9, 1);
+  float rotationFactor = random(1) < 0.5 ? -1 : 1;
+
+  direction.setMag(orbitalVelocity);
+  direction.rotate(rotation * rotationFactor);
+  body.velocity.set(direction);
 }
 
 public void setSelectedPlanetVelocityTowardsMousePosition(PVector mousePosWithOffset)

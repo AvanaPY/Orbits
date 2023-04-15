@@ -7,9 +7,9 @@ public class UI
   private UIKeybindWindow kbWindow;
   public UI()
   {
-    planetInfoWindow = new SelectedPlanetInfoWindow(new PVector(width - 250, 0), new PVector(250, 0), true);
-    planetListWindow = new UIPlanetListWindow(0, 0, 150, 300, false);
-    kbWindow = new UIKeybindWindow(0, 300, 150, 200);
+    planetListWindow = new UIPlanetListWindow(width - 200, 0, 200, 300, false);
+    planetInfoWindow = new SelectedPlanetInfoWindow(new PVector(width - 200, 300), new PVector(200, 0), true);
+    kbWindow = new UIKeybindWindow(0, height - 240, 150, 240);
 
     elements = new UIElement[] {
       planetInfoWindow,
@@ -33,8 +33,9 @@ public class UI
 
     fill(0, 0, 360);
     noStroke();
-    textAlign(LEFT, BOTTOM);
-    text("Mode: " + OnMouseClickModeEnumManager.getCurrentOnMouseClickModeEnum(), 5, height - 5);
+    textAlign(LEFT, TOP);
+    text("Mode: " + OnMouseClickModeEnumManager.getCurrentOnMouseClickModeEnum(), 5, 5);
+    text("Framerate: " + round(frameRate), 5, 20);
   }
 
   public boolean positionInUI(float x, float y)
@@ -47,16 +48,9 @@ public class UI
 
   public boolean click(float x, float y)
   {
-    println("-----");
     for (UIElement element : elements)
-    {
-      println("Checking", element);
-      if (element.click(mouseX, mouseY))
-      {
-        println("Clicked", element);
+      if (element.click(x, y))
         return true;
-      }
-    }
     return false;
   }
 

@@ -16,7 +16,6 @@ public class UIPlanetListWindow extends UIElement
 
   public void addNewPlanet(Body body)
   {
-    float y = entryHeight * elements.size();
     UIPlanetListEntryElement entry = new UIPlanetListEntryElement(x, y, w, 20, body);
     elements.add(entry);
 
@@ -42,7 +41,7 @@ public class UIPlanetListWindow extends UIElement
   private void updateElementPositions()
   {
     for (int i = 0; i < elements.size(); i++) {
-      elements.get(i).y = i * entryHeight;
+      elements.get(i).y = y + i * entryHeight;
     }
   }
   private void updateHeightIfGrow()
@@ -66,7 +65,7 @@ public class UIPlanetListWindow extends UIElement
         continue;
       uie.render();
     }
-    strokeWeight(2);
+    strokeWeight(1);
     noFill();
     stroke(0, 0, 360);
     rect(x, y, w, h);

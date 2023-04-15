@@ -85,8 +85,13 @@ public class SelectedPlanetInfoWindow extends UIElement
     , "M "));
     
     _y += 20;
-
+    elements.add(new UIEditableFloatElement(0, _y, w, 20, (Body body) -> {
+      return body.calculateMomentum().mag();
+    }
+    , "Momentum "));
     
+    _y += 20;
+
     _y += 2;
     if(grow)
       h = max(_y, h);
