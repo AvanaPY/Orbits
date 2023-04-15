@@ -89,27 +89,12 @@ public class Body
     mass = CalculateMass(gravity, radius);
   }
 
-  public void attractExceptSelf(ArrayList<Body> bodies)
-  {
-    for (Body body : bodies)
-    {
-      if (body == this)
-        continue;
-
-      PVector direction = PVector.sub(body.position, position);
-      float dstsqr = constrain(direction.magSq(), 0.01, 1_000_000);
-      float force = G * body.mass * this.mass / dstsqr;
-      float acc = force / this.mass;
-      direction.setMag(acc);
-      acceleration.add(direction);
-    }
-  }
-
   public void resetAcceleration()
   {
+    acceleration.set(0, 0);
   }
 
-  public void attractExceptSelf(Body[] bodies)
+  public void attractExceptSelf(Iterable<Body> bodies)
   {
     resetAcceleration();
     for (Body body : bodies)
@@ -132,7 +117,6 @@ public class Body
     velocity.add(acceleration);
     position.add(PVector.mult(velocity, TIME_STEP_SIZE));
     prevAcceleration.set(acceleration);
-    acceleration.set(0, 0);
   }
 
   public void drawPath(boolean isSelected, boolean isReference, boolean drawMass, boolean drawPath, PVector referencePosition)

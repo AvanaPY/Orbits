@@ -4,41 +4,48 @@ public static class PathSimulator
   
   public static void simulatePaths(ArrayList<Body> bodies, PVector a)
   {
-    Body[] bodiesArray = new Body[bodies.size()];
+    ArrayList<Body> copiedBodies = new ArrayList<Body>();
     
     Body simulatedReferenceBody = null;
     for(int i = 0; i < bodies.size(); i++)
     {
-      bodies.get(i).pathInformation.reset();  
-      bodiesArray[i] = bodies.get(i).clone();
-      bodiesArray[i].pathInformation = bodies.get(i).pathInformation;
+      Body b = bodies.get(i);
+      Body c = b.clone();
+      b.pathInformation.reset();
+      c.pathInformation = b.pathInformation;
       
-      if(PlanetSelector.referencePlanet == bodies.get(i))
-        simulatedReferenceBody = bodiesArray[i];
+      copiedBodies.add(c);
+      
+      if(PlanetSelector.referencePlanet == b)
+        simulatedReferenceBody = c;
     } 
     
     for(int i = 0; i < SIMULATION_STEPS; i++)
     {
-      for(Body b : bodiesArray)
-        b.attractExceptSelf(bodiesArray);
+      for(Body b : copiedBodies)
+        b.attractExceptSelf(copiedBodies);
         
-      for(int j = 0; j < bodiesArray.length; j++)
-        if(!bodiesArray[j].pathInformation.willCollide)
-          bodiesArray[j].updatePosition();
+      for(int j = 0; j < copiedBodies.size(); j++)
+        if(!copiedBodies.get(j).pathInformation.willCollide)
+          copiedBodies.get(j).updatePosition();
         
       // Figure out if we have collided with something
-      for(int j = 0; j < bodiesArray.length; j++)
+      for(int j = 0; j < copiedBodies.size(); j++)
       {
-        Body b = bodiesArray[j];
-        for(int k = 0; k < bodiesArray.length; k++)
+        Body b = copiedBodies.get(j);
+        if(b.pathInformation.willCollide)
+          continue;
+          
+        for(int k = 0; k < copiedBodies.size(); k++)
         {
           if(j == k)
             continue;
-          Body other = bodiesArray[k];
+          Body jBody = copiedBodies.get(j);
+          Body other = copiedBodies.get(k);
           float sumr = other.radius + b.radius;
-          float distSq = PVector.sub(bodiesArray[j].position, bodiesArray[k].position).magSq();
+          float distSq = PVector.sub(jBody.position, other.position).magSq();
           if(distSq < sumr * sumr)
-            bodiesArray[j].pathInformation.willCollide = true;
+            jBody.pathInformation.willCollide = true;
         }
         
         // This part is a bit questionable because it 
@@ -53,7 +60,6 @@ public static class PathSimulator
         }
         
         bodies.get(j).pathInformation.path.add(pathPos);
-        
       }
     }
   }

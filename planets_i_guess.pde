@@ -156,10 +156,6 @@ void takeSimulationStep()
         body.updatePosition();
     }
   }
-  // Simulate the paths
-  PVector referencePosition = getGlobalReferencePosition();
-  if (simulatePaths)
-    PathSimulator.simulatePaths(bodies, referencePosition);
 }
 
 void draw()
@@ -167,6 +163,9 @@ void draw()
   background(20);
   PVector referencePosition = getGlobalReferencePosition();
 
+  // calculate the paths prior to moving, this helps stabilise them visually as they are only a visual idea anyways
+  if (simulatePaths)
+    PathSimulator.simulatePaths(bodies, referencePosition);
   takeSimulationStep();
 
   renderGrid();

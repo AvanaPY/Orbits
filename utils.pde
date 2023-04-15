@@ -28,16 +28,16 @@ public color getRandomColor(float minHue, float maxHue, float minSat, float maxS
 public void setBodyVelocityOrthogonalToGreatestForce(Body body, ArrayList<Body> bodies)
 {
   Body greatestAttractor = null;
-  float force = 0;
+  float value = Float.MIN_VALUE;
   for (Body b : bodies)
   {
     if (b == body)
       continue;
     float dist = PVector.sub(body.position, b.position).magSq();
     float f = gravitationalForce(body, b) / dist;
-    if (f > force)
+    if (f > value)
     {
-      force = f;
+      value = f;
       greatestAttractor = b;
     }
   }
@@ -47,9 +47,11 @@ public void setBodyVelocityOrthogonalToGreatestForce(Body body, ArrayList<Body> 
   PVector direction = PVector.sub(greatestAttractor.position, body.position);
   float distance = direction.mag();
   float orbitalVelocity = sqrt(G * greatestAttractor.mass / (distance * TIME_STEP_SIZE)); // Scale by time step so the simulation steps are the right size
+  float rotation = HALF_PI * random(0.5, 1);
+  float rotationFactor = random(1) < 0.5 ? -1 : 1;
 
   direction.setMag(orbitalVelocity);
-  direction.rotate(-HALF_PI);
+  direction.rotate(rotation * rotationFactor);
   body.velocity.set(direction);
 }
 
