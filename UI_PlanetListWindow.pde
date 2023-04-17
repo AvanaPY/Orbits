@@ -5,6 +5,7 @@ public class UIPlanetListWindow extends UIElement
 
   private float entryHeight = 20;
   private float startingHeight;
+  private int textSz = 14;
 
   public UIPlanetListWindow(float x, float y, float w, float h, boolean grow)
   {
@@ -58,7 +59,7 @@ public class UIPlanetListWindow extends UIElement
     noStroke();
     fill(backgroundColor);
     rect(x, y, w, h);
-
+    textSize(textSz);
     for (UIElement uie : elements)
     {
       if(!grow && uie.y + uie.h > y + h)

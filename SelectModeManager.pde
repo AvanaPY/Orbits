@@ -2,7 +2,7 @@ enum OnMouseClickModeEnum
 {
   NONE,
     PLANET_CREATE_SELECT,
-    PLANET_SET_REFERENCED,
+    PLANET_CREATE_MOON,
 }
 
 public static class OnMouseClickModeEnumManager
@@ -20,18 +20,33 @@ public static class OnMouseClickModeEnumManager
   {
     return mode;
   }
-  public static void cycleToNextMode() {
+  public static OnMouseClickModeEnum cycleToNextMode() {
     switch(mode)
     {
     case NONE:
       setMode(OnMouseClickModeEnum.PLANET_CREATE_SELECT);
       break;
     case PLANET_CREATE_SELECT:
-      setMode(OnMouseClickModeEnum.PLANET_SET_REFERENCED);
+      setMode(OnMouseClickModeEnum.PLANET_CREATE_MOON);
       break;
-    case PLANET_SET_REFERENCED:
+    case PLANET_CREATE_MOON:
     default:
-      setMode(OnMouseClickModeEnum.NONE);
+      setMode(OnMouseClickModeEnum.PLANET_CREATE_SELECT);
     }
+    return getMode();
+  }
+  public static String getCurrentModeAsDisplayString()
+  {
+    switch(mode)
+    {
+    case PLANET_CREATE_SELECT:
+      return "Select/Create";
+    case PLANET_CREATE_MOON:
+      return "Create Moon";
+    case NONE:
+    default:
+      break;
+    }
+    return "PH_TEXT";
   }
 }

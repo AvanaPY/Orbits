@@ -1,10 +1,26 @@
 public static class PathSimulator
 {
-  public static final int SIMULATION_STEPS = PATH_SIMULATOR_STEPS;
+  public static final int SIMULATION_STEPS = INITIAL_SIMULATION_STEPS;
   private static int previousSimulationSteps = SIMULATION_STEPS;
 
   private static ArrayList<Body> copiedBodies = new ArrayList<Body>();
   private static Body simulatedReferenceBody = null;
+  
+  private static int patience = 5;
+  private static int patienceCounter = 0;
+  
+  public static int getSimulationSteps()
+  {
+    int s = previousSimulationSteps;
+    if(patienceCounter > patience)
+    {
+      s += 1;
+      patienceCounter = 0;
+    }
+    s = min(s, MAXIMUM_SIMULATION_STEPS);
+    return s;
+  }
+  
   public static void simulatePaths(ArrayList<Body> bodies, PVector a, float frameRate)
   {
     copiedBodies.clear();
@@ -23,14 +39,26 @@ public static class PathSimulator
         simulatedReferenceBody = c;
     }
 
-    int SIM_STEPS_TO_DO = previousSimulationSteps;
+    int SIM_STEPS_TO_DO = 0;
+    if (DYNAMIC_PATHS)
+    {
+      SIM_STEPS_TO_DO = PathSimulator.getSimulationSteps();
 
-    /**********************************************************************/
-    // Dynamically change how many simulation steps we have
-    float fpsDifference = frameRate - DESIRED_FRAMERATE;
-    if (-1 < fpsDifference || fpsDifference < 1)
-      SIM_STEPS_TO_DO += round(fpsDifference * DYNAMIC_SIM_STEPS_FACTOR);
-    SIM_STEPS_TO_DO = max(SIM_STEPS_TO_DO, 0);
+      /**********************************************************************/
+      // Dynamically change how many simulation steps we have
+      float fpsDifference = DESIRED_FRAMERATE - frameRate;
+      if (fpsDifference > 4)
+      {
+        SIM_STEPS_TO_DO -= round(fpsDifference * DYNAMIC_SIM_STEPS_FACTOR);
+        patienceCounter = 0;
+      }
+      else
+        patienceCounter++;
+      SIM_STEPS_TO_DO = max(SIM_STEPS_TO_DO, 0);
+    } else
+      SIM_STEPS_TO_DO = SIMULATION_STEPS;
+
+
     previousSimulationSteps = SIM_STEPS_TO_DO;
     /**********************************************************************/
     for (int i = 0; i < SIM_STEPS_TO_DO; i++)
@@ -38,8 +66,8 @@ public static class PathSimulator
       calculateAttractions(copiedBodies);
       /*
       for (Body b : copiedBodies)
-        b.attractExceptSelf(copiedBodies);
-      */
+       b.attractExceptSelf(copiedBodies);
+       */
       //calculateAttractions(copiedBodies);
       for (int j = 0; j < copiedBodies.size(); j++)
         if (!copiedBodies.get(j).pathInformation.willCollide)
@@ -76,6 +104,7 @@ public static class PathSimulator
         }
 
         bodies.get(j).pathInformation.path.add(pathPos);
+        
       }
     }
   }

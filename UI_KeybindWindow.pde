@@ -2,6 +2,7 @@ public class UIKeybindWindow extends UIElement
 {
   private KeybindManager kbManager;
   private ArrayList<UIElement> elements;
+  private int textSz = 10;
   public UIKeybindWindow(float x, float y, float w, float h)
   {
     super(x, y, w, h);
@@ -23,6 +24,7 @@ public class UIKeybindWindow extends UIElement
     fill(backgroundColor);
     rect(x, y, w, h);
     
+    textSize(textSz);
     for(UIElement e : elements)
       e.renderUI();
     

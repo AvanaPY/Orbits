@@ -82,14 +82,37 @@ public String getRandomPlanetName()
   }
 }
 
-void createRandomInitialPlanets(int n)
+void createRandomInitialPlanets(int n, int moons, float initialR, float minGrowthR, float maxGrowthR, float factorGrowthR)
 {
-  for(int i = 0; i < n; i++)
+  float r = initialR;
+  for (int i = 0; i < n; i++)
   {
-    float x = random(50, 400) * (random(1) < 0.5 ? -1 : 1);
-    float y = random(50, 400) * (random(1) < 0.5 ? -1 : 1);
-    Body b = createNewRandomPlanetAtPosition(new PVector(x, y));
+    float angle = random(TWO_PI);
+
+    PVector pos = PVector.fromAngle(angle).setMag(r);
+    r += random(minGrowthR, maxGrowthR);
+    maxGrowthR *= factorGrowthR;
+    
+    float _r = random(4, PLANET_MAXIMUM_RADIUS);
+    float _g = random(4, PLANET_MAXIMUM_GRAVITY);
+
+    Body b = createNewRandomPlanetAtPosition(pos);
+    b.setRadius(_r);
+    b.setGravity(_g);
+
     setBodyInOrbitAroundGreatestAttractor(b, bodies);
+
+    if (b.mass < PLANET_ON_CREATE_MOON_MASS_THRESHOLD)
+      continue;
+    int nMoons = floor(random(moons + 1));
+    for (int m = 0; m < nMoons; m++)
+    {
+      PVector mPos = PVector.fromAngle(random(TWO_PI)).setMag(_r + 15 * (m + 1)).add(b.position);
+      Body moon = createNewRandomPlanetAtPosition(mPos);
+      moon.setRadius(PLANET_MOON_RADIUS);
+      moon.setGravity(PLANET_MOON_GRAVITY);
+      setBodyInOrbitAroundBody(moon, b, 1);
+    }
   }
 }
 
@@ -108,7 +131,7 @@ public void referencePlanetAtMousePosition(PVector mousePosWithOffset)
 
 public Body createOrSelectPlanetAtPosition(PVector mousePosWithOffset)
 {
-  if(PlanetSelector.selectPlanetAt(mousePosWithOffset.x, mousePosWithOffset.y, bodies, 1.2))
+  if (PlanetSelector.selectPlanetAt(mousePosWithOffset.x, mousePosWithOffset.y, bodies, 1.5))
     return null;
   Body b = createNewRandomPlanetAtPosition(mousePosWithOffset);
   PlanetSelector.setSelectedPlanet(b);
@@ -122,7 +145,7 @@ public Body createNewRandomPlanetAtPosition(PVector globalPosition)
   float ax = 0, ay = 0;
   float r = random(PLANET_MINIMUM_RADIUS, PLANET_MAXIMUM_RADIUS);
   float g = random(PLANET_MINIMUM_GRAVITY, PLANET_MAXIMUM_GRAVITY);
-  color c = getRandomColor(0, 360, 250, 360, 270, 360);
+  color c = getRandomColor(0, 360, 320, 360, 320, 360);
   String name = getRandomPlanetName();
 
   Body body = createNewPlanet(x, y, vx, vy, ax, ay, r, g, false, c, name);
@@ -148,15 +171,28 @@ public void setBodyInOrbitAroundGreatestAttractor(Body body, ArrayList<Body> bod
   if (greatestAttractor == null)
     return;
 
-  PVector direction = PVector.sub(greatestAttractor.position, body.position);
+  setBodyInOrbitAroundBody(body, greatestAttractor, 1);
+}
+
+// Sets Body ´a´ in orbit of Body ´b´
+public void setBodyInOrbitAroundBody(Body a, Body b, int orbitDirection)
+{
+  if(orbitDirection != -1 || orbitDirection != 1)
+    orbitDirection = 1;
+    
+  PVector direction = PVector.sub(b.position, a.position);
   float distance = direction.mag();
-  float orbitalVelocity = sqrt(G * greatestAttractor.mass / (distance * TIME_STEP_SIZE)); // Scale by time step so the simulation steps are the right size
-  float rotation = HALF_PI * random(0.9, 1);
-  float rotationFactor = random(1) < 0.5 ? -1 : 1;
+  float orbitalVelocity = sqrt(G * b.mass / (distance * TIME_STEP_SIZE)); // Scale by time step so the simulation steps are the right size
+  float rotation = HALF_PI;
 
   direction.setMag(orbitalVelocity);
-  direction.rotate(rotation * rotationFactor);
-  body.velocity.set(direction);
+  direction.rotate(rotation * orbitDirection);
+
+  if (PVector.dot(b.velocity, direction) < 0)
+    direction.mult(-1);
+
+  PVector newVelocity = PVector.sub(b.velocity, direction);
+  a.velocity.set(newVelocity);
 }
 
 public void setSelectedPlanetVelocityTowardsMousePosition(PVector mousePosWithOffset)
@@ -169,4 +205,35 @@ public void setSelectedPlanetVelocityTowardsMousePosition(PVector mousePosWithOf
     PVector dir = PVector.sub(mousePosWithOffset, body.position);
     body.velocity.set(dir);
   }
+}
+
+public PGraphics createSelectedPlanetOverlay()
+{
+  PGraphics g = createGraphics(200, 200);
+  g.beginDraw();
+  g.stroke(255, 255, 255);
+  g.noFill();
+  g.translate(g.width / 2, g.height / 2);
+  
+  g.colorMode(HSB);
+  float r = PLANET_MAXIMUM_RADIUS * 1.2;
+  float markerLength = 20;
+  g.stroke(45, 360, 360);
+  g.strokeWeight(2);
+  g.pushMatrix();
+  g.line(0 - r, 0, 0 - r - markerLength, 0);
+  g.line(0 + r, 0, 0 + r + markerLength, 0);
+  g.line(0, 0 - r, 0, 0 - r - markerLength);
+  g.line(0, 0 + r, 0, 0 + r + markerLength);
+
+  g.noFill();
+  for (int i = 0; i < 4; i++)
+  {
+    g.arc(0, 0, markerLength * 3, markerLength * 3, PI / 8f, HALF_PI - PI / 8f);
+    g.rotate(HALF_PI);
+  }
+  g.popMatrix();
+  
+  g.endDraw();
+  return g;
 }

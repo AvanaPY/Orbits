@@ -99,7 +99,7 @@ public class Body
   {
     mass = CalculateMass(gravity, radius);
   }
-  
+
   public void forceMovePosition(PVector offset)
   {
     position.add(offset);
@@ -114,7 +114,7 @@ public class Body
   {
     acceleration.add(PVector.div(force, mass));
   }
-  
+
   public void applyAcceleration(PVector acc)
   {
     acceleration.add(acc);
@@ -145,20 +145,25 @@ public class Body
     acceleration.set(0, 0);
   }
 
-  public void drawPath(boolean isSelected, boolean isReference, boolean drawMass, boolean drawPath, PVector referencePosition)
+  public void drawPath(boolean isSelected, boolean isReference, PVector referencePosition)
   {
     pushMatrix();
     translate(-referencePosition.x, -referencePosition.y);
-    if (drawPath && !isReference)
+    if (!isReference)
     {
       if (pathInformation.path.size() > 0)
       {
         beginShape();
         noFill();
         stroke(hue(c), saturation(c), 120);
-        strokeWeight(2);
-        for (PVector p : pathInformation.path)
-          vertex(p.x, p.y);
+        strokeWeight(3);
+        PVector start = pathInformation.path.get(0);
+        curveVertex(start.x, start.y);
+        for (int i = 1; i < pathInformation.path.size(); i+=5)
+        {
+          PVector p = pathInformation.path.get(i);
+          curveVertex(p.x, p.y);
+        }
         endShape();
 
         if (pathInformation.willCollide)
@@ -173,24 +178,25 @@ public class Body
     popMatrix();
   }
 
-  public void drawPlanet(boolean isSelected, boolean isReference, boolean drawMass, boolean drawPath, PVector referencePosition)
+  public void drawPlanet(boolean isSelected, boolean isReference, PVector referencePosition)
   {
     // The path is evaluated in absolute positions so we draw it before translating to our position
     // but we still translate to the reference position
     pushMatrix();
     translate(position.x-referencePosition.x, position.y-referencePosition.y);
-    noStroke();
-    fill(c);
-    circle(0, 0, 2 * radius);
 
     if (isSelected && !isReference)
     {
       strokeWeight(1);
       stroke(90, 360, 200);
       line(0, 0, velocity.x, velocity.y);
-      strokeWeight(3);
+      strokeWeight(1);
       point(velocity.x, velocity.y);
     }
+    
+    noStroke();
+    fill(c);
+    circle(0, 0, 2 * radius);
 
     popMatrix();
   }

@@ -69,7 +69,10 @@ public static class KeybindManager
   
   public void addKeybind(String keybindName, char keybindChar, String displayName, String displayKeybind, InteractiveAction action){
     if(getKeybind(keybindChar) != null)
+    {
+      println("KEYBIND COLLISION: Trying to assign new action to keybind '" + keybindChar + "'");
       return;
+    }
       
     Keybind keybind = new Keybind(keybindName, keybindChar, displayName, displayKeybind, action);
     
@@ -81,7 +84,10 @@ public static class KeybindManager
   public void addCodedKeybind(String keybindName, int code, String displayName, String displayKeybind, InteractiveAction action)
   {
     if(getCodedKeybind(code) != null)
+    {
+      println("CODED KEYBIND COLLISION: Trying to assign new action to keybind '" + code + "'");
       return;
+    }
       
     Keybind keybind = new Keybind(keybindName, code, displayName, displayKeybind, action);
     

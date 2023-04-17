@@ -7,7 +7,6 @@ public class SelectedPlanetInfoWindow extends UIElement
     super(position.x, position.y, dimensions.x, dimensions.y);
     this.grow = grow;
     
-    println("Created InfoWindow at", x, y, "with dimensions", w, h);
     /**********************************************MISC**********************************************/
     float _y = 0;
     elements.add(new UIEditableTextElement(0, _y, w, 20, (Body body) -> {

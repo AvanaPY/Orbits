@@ -1,26 +1,36 @@
-
 ArrayList<Body> bodies = new ArrayList<Body>();
 boolean simulating = true;
 boolean simulatePaths = true;
 PVector referencePlanetOffset = new PVector(0, 0);
 Body sun;
-KeybindManager kbManager;
 UI ui;
+KeybindManager kbManager;
+CursorModeManager cursorModeManager;
 
+float GRID_CELL_SIZE = 100;
+float remPixelsX;
+float remPixelsY;
+
+PGraphics selectedPlanetOverlay;
 void setup()
 {
-  size(1000, 1000);
-  frameRate(DESIRED_FRAMERATE + 10);
+  size(1000, 1000, P2D);
+  fullScreen(1);
+  frameRate(DESIRED_FRAMERATE);
   colorMode(COLOR_MODE, 360);
   textAlign(CENTER, CENTER);
   textSize(14);
+  noCursor();
 
-  // Set up UI
   kbManager = new KeybindManager();
-  setupKeybinds();
-  ui = new UI();
+  cursorModeManager = new CursorModeManager();
 
-  // Set up simulation
+  setupKeybinds();
+
+  ui = new UI();
+  remPixelsX = (width / 2) % GRID_CELL_SIZE;
+  remPixelsY = (height / 2) % GRID_CELL_SIZE;
+
   sun = createNewPlanet(0, 0,
     0, 0,
     0, 0,
@@ -28,8 +38,72 @@ void setup()
     true, color(180, 360, 360), "Centauri A20");
   PlanetSelector.setSelectedPlanet(sun);
   PlanetSelector.setReferencedPlanet(sun);
+  //createRandomInitialPlanets(2, 5, 600, 250, 350, 1.4);
+  
+  selectedPlanetOverlay = createSelectedPlanetOverlay();
+}
 
-  createRandomInitialPlanets(3);
+void draw()
+{
+  DYNAMIC_PATHS = !DYNAMIC_PATHS && frameCount > 300;
+
+  background(10);
+  PVector referencePosition = getGlobalReferencePosition();
+
+
+  takeSimulationStep();
+  // calculate the paths prior to moving, this helps stabilise them visually as they are only a visual idea anyways
+  if (simulatePaths)
+    PathSimulator.simulatePaths(bodies, referencePosition, frameRate);
+
+  renderGrid();
+
+  pushMatrix();
+  translate(width / 2, height / 2);
+  if (simulatePaths)
+    for (Body body : bodies)
+      body.drawPath(PlanetSelector.selectedPlanet == body, PlanetSelector.referencePlanet == body, referencePosition);
+
+  for (Body body : bodies)
+    body.drawPlanet(PlanetSelector.selectedPlanet == body, PlanetSelector.referencePlanet == body, referencePosition);
+
+  popMatrix();
+
+  renderSelectedPlanetUI();
+  ui.render();
+  // Render a cursor
+  switch(cursorModeManager.getCursorMode())
+  {
+  case CIRCLE:
+    noCursor();
+    float r = 20;
+    noFill();
+    stroke(cursorModeManager.getCursorColor());
+    circle(mouseX, mouseY, 2 * r);
+    strokeWeight(3);
+    point(mouseX, mouseY);
+    break;
+  case ARROW:
+    cursor(ARROW);
+    break;
+  case CROSS:
+    cursor(CROSS);
+    break;
+  case HAND:
+    cursor(HAND);
+    break;
+  case MOVE:
+    cursor(MOVE);
+    break;
+  case TEXT:
+    cursor(TEXT);
+    break;
+  case WAIT:
+    cursor(WAIT);
+    break;
+  default:
+    break;
+  }
 }
 
 void setupKeybinds()
@@ -49,20 +123,21 @@ void setupKeybinds()
   }
   );
 
+  kbManager.addKeybind("DeselectSelected", 'd', "Deselect", "D",
+    () -> {
+    USER_ACTION_DeselectSelectedPlanet();
+  }
+  );
+
   kbManager.addKeybind("ResetReference", 'r', "Reset Reference", "R",
     () -> {
-    referencePlanetOffset.add(PlanetSelector.getCurrentlyReferencedPlanet().position);
-    PlanetSelector.setReferencedPlanet(sun);
+    USER_ACTION_ResetReferenceOffset();
   }
   );
 
   kbManager.addKeybind("ReferenceSelected", 't', "Reference Selected", "T",
     () -> {
-    Body s = PlanetSelector.getCurrentlySelectedPlanet();
-    if (s != null) {
-      referencePlanetOffset.set(0, 0);
-      PlanetSelector.setReferencedPlanet(s);
-    }
+    USER_ACTION_SetSelectedAsReference();
   }
   );
 
@@ -73,40 +148,28 @@ void setupKeybinds()
   );
 
   kbManager.addKeybind("CycleMode", TAB, "Cycle Mode", "TAB", () -> {
-    OnMouseClickModeEnumManager.cycleToNextMode();
+    USER_ACTION_CycleNextClickMode();
   }
   );
 
   float planetVelocityChangeStep = 0.1;
   kbManager.addCodedKeybind("LeftVelocity", LEFT, "Move Velocity Left", "LEFT", () -> {
-    Body b = PlanetSelector.getCurrentlySelectedPlanet();
-    if(b == null)  
-      return;
-    b.velocity.add(-planetVelocityChangeStep, 0);
+    USER_ACTION_ChangeSelectedPlanetVelocity(-planetVelocityChangeStep, 0);
   }
   );
 
   kbManager.addCodedKeybind("RightVelocity", RIGHT, "Move Velocity Right", "RIGHT", () -> {
-    Body b = PlanetSelector.getCurrentlySelectedPlanet();
-    if(b == null)  
-      return;
-    b.velocity.add(planetVelocityChangeStep, 0);
+    USER_ACTION_ChangeSelectedPlanetVelocity(planetVelocityChangeStep, 0);
   }
   );
 
   kbManager.addCodedKeybind("UPVelocity", UP, "Move Velocity UP", "UP", () -> {
-    Body b = PlanetSelector.getCurrentlySelectedPlanet();
-    if(b == null)  
-      return;
-    b.velocity.add(0, -planetVelocityChangeStep);
+    USER_ACTION_ChangeSelectedPlanetVelocity(0, -planetVelocityChangeStep);
   }
   );
 
   kbManager.addCodedKeybind("DownVelocity", DOWN, "Move Velocity Down", "DOWN", () -> {
-    Body b = PlanetSelector.getCurrentlySelectedPlanet();
-    if(b == null)  
-      return;
-    b.velocity.add(0, planetVelocityChangeStep);
+    USER_ACTION_ChangeSelectedPlanetVelocity(0, planetVelocityChangeStep);
   }
   );
 }
@@ -114,17 +177,19 @@ void setupKeybinds()
 void renderGrid()
 {
   PVector referencePosition = getGlobalReferencePosition();
-  float cellSize = 100;
-  strokeWeight(1);
-  stroke(120, 0, 45);
+  float offsetX = referencePosition.x % GRID_CELL_SIZE + GRID_CELL_SIZE - remPixelsX;
+  float offsetY = referencePosition.y % GRID_CELL_SIZE + GRID_CELL_SIZE - remPixelsY;
 
   pushMatrix();
-  translate(-referencePosition.x % cellSize, -referencePosition.y % cellSize);
-  for (float i = -cellSize; i <= height; i += cellSize)
-  {
-    line(i, -i, i, i + height);
-    line(-i, i, i + width, i);
-  }
+  translate(-offsetX, -offsetY);
+
+  strokeWeight(1);
+  stroke(120, 0, 45);
+  for (float i = 0; i <= width + GRID_CELL_SIZE; i += GRID_CELL_SIZE)
+    line(i, -GRID_CELL_SIZE, i, height + GRID_CELL_SIZE);
+
+  for (float i = 0; i <= height + GRID_CELL_SIZE; i += GRID_CELL_SIZE)
+    line(-GRID_CELL_SIZE, i, width + 2 * GRID_CELL_SIZE, i);
 
   popMatrix();
 }
@@ -145,7 +210,8 @@ void renderSelectedPlanetUI()
     PVector p = PVector.sub(selectedPlanet.position, referencePosition);
     float r = max(selectedPlanet.radius * 1.2, 10);
     float angle = TWO_PI * (frameCount / 600f);
-    float markerLength = 20 * map((sin(frameCount / 30f) + 1), -1, 1, 0.2, 1);
+    float baseMarkerLength = 20;
+    float markerLength = baseMarkerLength;// * map((sin(frameCount / 30f) + 1), -1, 1, 0.4, 1);
 
     // Draw reference planet's vel
     if (referencePlanet != null)
@@ -170,10 +236,7 @@ void renderSelectedPlanetUI()
     pushMatrix();
     translate(p.x, p.y);
     rotate(angle);
-    line(0 - r, 0, 0 - r - markerLength, 0);
-    line(0 + r, 0, 0 + r + markerLength, 0);
-    line(0, 0 - r, 0, 0 - r - markerLength);
-    line(0, 0 + r, 0, 0 + r + markerLength);
+    image(selectedPlanetOverlay, - selectedPlanetOverlay.width / 2, - selectedPlanetOverlay.height / 2);
     popMatrix();
   }
   popMatrix();
@@ -245,35 +308,8 @@ void resolveCollisions(ArrayList<Body> bodies)
       b.forceMovePosition(PVector.mult(dir, -1).setMag(offsetB));
 
       float totalMomentum2 = PVector.add(a.calculateMomentum(), b.calculateMomentum()).mag();
-      println(a.name, "HAS COLLIDED WITH", b.name);
-      println("\tMomentum1:", totalMomentum);
-      println("\tMomentum2:", totalMomentum2, "(" + (totalMomentum == totalMomentum2) + ")");
     }
   }
-}
-
-void draw()
-{
-  background(20);
-  PVector referencePosition = getGlobalReferencePosition();
-
-  // calculate the paths prior to moving, this helps stabilise them visually as they are only a visual idea anyways
-  if (simulatePaths)
-    PathSimulator.simulatePaths(bodies, referencePosition, frameRate);
-
-  takeSimulationStep();
-  renderGrid();
-
-  pushMatrix();
-  translate(width / 2, height / 2);
-  for (Body body : bodies)
-    body.drawPath(PlanetSelector.selectedPlanet == body, PlanetSelector.referencePlanet == body, false, simulatePaths, referencePosition);
-  for (Body body : bodies)
-    body.drawPlanet(PlanetSelector.selectedPlanet == body, PlanetSelector.referencePlanet == body, false, simulatePaths, referencePosition);
-
-  popMatrix();
-  renderSelectedPlanetUI();
-  ui.render();
 }
 
 Body createNewPlanet(float x, float y, float vx, float vy, float ax, float ay, float r, float g, boolean fixed, color c, String name)
@@ -326,22 +362,36 @@ void mousePressed()
 
   if (mouseButton == LEFT)
   {
-    switch(OnMouseClickModeEnumManager.getMode())
+    OnMouseClickModeEnum e = OnMouseClickModeEnumManager.getMode();
+    switch(e)
     {
     case PLANET_CREATE_SELECT:
       // createOrSelectPlanetAtPosition returns null if it selected a planet, and a 'Body' if it created one
       Body b = createOrSelectPlanetAtPosition(mousePosWithOffset);
       if (b != null)
       {
-        setBodyInOrbitAroundGreatestAttractor(b, bodies);
+        Body refPlanet = PlanetSelector.getCurrentlyReferencedPlanet();
+        if (refPlanet != null)
+          setBodyInOrbitAroundBody(b, refPlanet, 1);
+        else
+          setBodyInOrbitAroundGreatestAttractor(b, bodies);
+
         simulating = false;
       }
       break;
-    case PLANET_SET_REFERENCED:
-      referencePlanetAtMousePosition(mousePosWithOffset);
+    case PLANET_CREATE_MOON:
+      Body refPlanet = PlanetSelector.getCurrentlyReferencedPlanet();
+      if (refPlanet == null)
+        break;
+      Body moon = createNewRandomPlanetAtPosition(mousePosWithOffset);
+      moon.setRadius(PLANET_MOON_RADIUS);
+      moon.setGravity(PLANET_MOON_GRAVITY);
+      setBodyInOrbitAroundBody(moon, refPlanet, 1);
+      PlanetSelector.setSelectedPlanet(moon);
       break;
     case NONE:
     default:
+      println("WARING: Encountered unaccounted-for OnMouseClickModeEnum: ", e);
       break;
     }
   } else if (mouseButton == RIGHT)

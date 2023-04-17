@@ -7,8 +7,8 @@ public class UI
   private UIKeybindWindow kbWindow;
   public UI()
   {
-    planetListWindow = new UIPlanetListWindow(width - 200, 0, 200, 300, false);
     planetInfoWindow = new SelectedPlanetInfoWindow(new PVector(width - 200, 300), new PVector(200, 0), true);
+    planetListWindow = new UIPlanetListWindow(width - 200, 0, 200, 300, false);
     kbWindow = new UIKeybindWindow(0, height - 240, 150, 240);
 
     elements = new UIElement[] {
@@ -31,11 +31,25 @@ public class UI
     planetListWindow.render();
     kbWindow.render();
 
-    fill(0, 0, 360);
     noStroke();
+    float textSz = getUITextScale();
+    
+    textSize(round(24 * textSz));
     textAlign(LEFT, TOP);
-    text("Mode: " + OnMouseClickModeEnumManager.getCurrentOnMouseClickModeEnum(), 5, 5);
-    text("Framerate: " + round(frameRate), 5, 20);
+    
+    fill(0, 360, 360);
+    text(OnMouseClickModeEnumManager.getCurrentModeAsDisplayString(), mouseX + 15, mouseY + 15);
+    
+    fill(0, 0, 360);
+    text("Framerate: " + round(frameRate), 5, 5);
+    text("Sim steps: " + PathSimulator.previousSimulationSteps, 5, 5 + 24 * textSz);
+  }
+  
+  private float getUITextScale()
+  {
+    float windowWidth = width;
+    float originalWidth = 1920;
+    return windowWidth / originalWidth;
   }
 
   public boolean positionInUI(float x, float y)
