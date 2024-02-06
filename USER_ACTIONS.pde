@@ -11,7 +11,7 @@ public void USER_ACTION_SetSelectedAsReference()
 
 public void USER_ACTION_DeselectSelectedPlanet()
 {
-  PlanetSelector.setSelectedPlanet(null);
+  PlanetSelector.setSelectedPlanet(sun);
 }
 
 public void USER_ACTION_ResetReferenceOffset()

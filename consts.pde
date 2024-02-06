@@ -1,13 +1,14 @@
 // Generic data
 public static int DESIRED_FRAMERATE = 60;
-public static boolean DYNAMIC_PATHS = false;
+public static boolean DYNAMIC_PATHS = true;
 
 // Simulation constants
 public static final float TIME_STEP_SIZE = 1 / 100f;
 public static final int STEPS_PER_FRAME = 1;
-public static final int INITIAL_SIMULATION_STEPS = 1500;
+public static final int INITIAL_SIMULATION_STEPS = 2000;
+public static final int MINIMUM_SIMULATION_STEPS = 1500;
 public static final int MAXIMUM_SIMULATION_STEPS = 5000;
-public static final float DYNAMIC_SIM_STEPS_FACTOR = 0.5; // How large steps to take when dynamically changing how many simulation steps we do in order to keep framerate at a desired state
+public static final float DYNAMIC_SIM_STEPS_FACTOR = 5; // How large steps to take when dynamically changing how many simulation steps we do in order to keep framerate at a desired state
 
 // Physics constants
 public static final float G = 0.01;

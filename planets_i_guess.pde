@@ -16,7 +16,7 @@ void setup()
 {
   size(1000, 1000, P2D);
   fullScreen(1);
-  frameRate(DESIRED_FRAMERATE);
+  frameRate(120);
   colorMode(COLOR_MODE, 360);
   textAlign(CENTER, CENTER);
   textSize(14);
